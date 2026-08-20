@@ -1,5 +1,6 @@
 {
   "framework": "vite",
+  "installCommand": "npm install --install-scripts",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "headers": [
