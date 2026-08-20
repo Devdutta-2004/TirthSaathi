@@ -4,6 +4,7 @@ import { getFamilyGroup, saveFamilyGroup, createNewFamilyGroup, joinExistingFami
 import { getStoredPasses } from '../services/passService';
 import { initOfflineSync, getOfflineQueue } from '../services/offlineSyncService';
 import { realtimeClient } from '../services/realtimeClient';
+import { peerMeshService } from '../services/peerService';
 import { watchDeviceGPS, stopWatchingGPS, getDeviceBattery, playSpiritualChimeBeacon } from '../services/geoService';
 
 const YatraContext = createContext();
@@ -53,69 +54,87 @@ export const YatraProvider = ({ children }) => {
   };
 
   // ─────────────────────────────────────────────────────────────
-  // A. INITIALIZE REALTIME WEBSOCKET & GPS HARDWARE ENGINE
+  // A. INITIALIZE DUAL-ENGINE: WEBRTC DIRECT P2P + WEBSOCKET MESH
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    // 1. Initialize Realtime WebSocket
+    const deviceId = localStorage.getItem('tirthsaathi_device_id') || 'DEV-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    localStorage.setItem('tirthsaathi_device_id', deviceId);
+
+    const groupCode = familyGroup.groupCode || 'TS-FAM-7X29A';
+    const userName = localStorage.getItem('tirthsaathi_user_name') || 'Devdutta';
+
+    // 1. Initialize Direct WebRTC Peer-to-Peer Mesh (Works across any 4G/5G mobile data worldwide)
+    peerMeshService.init(groupCode, deviceId, userName, 'Devotee');
+
+    // 2. Initialize Local WebSocket Client
     realtimeClient.connect();
 
-    // 2. Read Device Battery
+    // 3. Read Device Battery
     getDeviceBattery().then((lvl) => setMyBattery(lvl));
 
-    // 3. Start Physical GPS Location Tracking
+    // 4. Start Physical GPS Location Tracking
     const watchId = watchDeviceGPS(
       (pos) => {
         setMyCoords({ lat: pos.lat, lng: pos.lng });
         setMyAccuracy(pos.accuracy);
         setMyHeading(pos.heading);
 
-        // Stream real GPS update to WebSocket backend
+        // Stream real GPS update to both WebRTC peers & WebSocket server
+        peerMeshService.sendTelemetry({ lat: pos.lat, lng: pos.lng }, pos.accuracy, myBattery, pos.heading);
         realtimeClient.sendTelemetry({ lat: pos.lat, lng: pos.lng }, pos.accuracy, myBattery, pos.heading);
       },
       (err) => {
-        console.warn('[GPS Provider] Running with default location or permission pending:', err.message);
+        console.warn('[GPS Provider] GPS satellite search:', err.message);
       }
     );
 
-    // 4. Subscribe to Realtime Server Broadcasts
-    const unsubscribe = realtimeClient.subscribe((event) => {
+    // 5. Handle WebRTC P2P Incoming Data
+    const unsubscribePeer = peerMeshService.subscribe((event) => {
       const { type, payload } = event;
 
       switch (type) {
-        case 'CONNECTION_STATE':
-          setIsRealtimeConnected(payload.connected);
+        case 'PEER_READY':
+          setIsRealtimeConnected(true);
           break;
 
-        case 'GROUP_SYNC':
-          // Full group sync from server
-          if (payload.members && payload.members.length > 0) {
-            setFamilyGroup((prev) => ({
-              ...prev,
-              groupCode: payload.groupCode,
-              members: payload.members
-            }));
-          }
-          break;
-
-        case 'MEMBER_JOINED':
+        case 'PEER_HELLO':
           addToast(
-            '👨‍👩‍👧 Family Member Joined!',
-            `${payload.name} has joined group ${familyGroup.groupCode}.`,
+            '👨‍👩‍👧 Family Phone Connected Live!',
+            `${payload.name} connected directly over WebRTC.`,
             'success'
           );
           setFamilyGroup((prev) => {
             const exists = prev.members.some((m) => m.deviceId === payload.deviceId);
             if (exists) return prev;
-            return { ...prev, members: [...prev.members, payload] };
+            return {
+              ...prev,
+              members: [
+                ...prev.members,
+                {
+                  id: `usr-${payload.deviceId}`,
+                  deviceId: payload.deviceId,
+                  name: payload.name,
+                  role: payload.role || 'Member',
+                  phone: '+91 Mobile Sync',
+                  avatar: '🧑',
+                  battery: 92,
+                  status: 'online',
+                  coords: { lat: 25.3109, lng: 83.0107 },
+                  lastSynced: 'Just now',
+                  distanceMeters: 10,
+                  isOnline: true
+                }
+              ]
+            };
           });
           break;
 
-        case 'TELEMETRY_BROADCAST':
-          // Update live GPS coordinates of peer phone
+        case 'GPS_TELEMETRY':
+          // Update live GPS coordinates of peer phone in real time!
           setFamilyGroup((prev) => ({
             ...prev,
             members: prev.members.map((m) => {
-              if (m.deviceId === payload.deviceId) {
+              if (m.deviceId === payload.deviceId || m.name === payload.name) {
                 return {
                   ...m,
                   coords: payload.coords,
@@ -131,18 +150,18 @@ export const YatraProvider = ({ children }) => {
           }));
           break;
 
-        case 'BEACON_TRIGGERED':
-          // Play loud chime beacon if triggered by another phone
+        case 'BEACON_ALERT':
+          // Sound loud audio chime on this phone
           playSpiritualChimeBeacon();
           addToast(
             '🔔 Spiritual Chime Beacon Alert!',
-            `Loud chime beacon sounded by ${payload.senderName}.`,
+            `Loud chime beacon sounded by ${payload.senderName || 'Family Member'}.`,
             'warning'
           );
           break;
 
-        case 'GATE_UPDATED':
-          // Instant multi-device gate occupancy sync
+        case 'GATE_SCAN_EVENT':
+          // Live crowd gate sync across phones
           setTemples((prevTemples) =>
             prevTemples.map((t) => {
               if (t.id === payload.templeId) {
@@ -150,29 +169,15 @@ export const YatraProvider = ({ children }) => {
                   ...t,
                   gates: t.gates.map((g) => {
                     if (g.id === payload.gateId) {
+                      const newCount = Math.max(0, g.currentCount + Number(payload.delta || 0));
                       return {
                         ...g,
-                        currentCount: payload.count,
-                        capacity: payload.capacity,
-                        occupancyPercent: Math.round((payload.count / payload.capacity) * 100)
+                        currentCount: newCount,
+                        occupancyPercent: Math.round((newCount / g.capacity) * 100)
                       };
                     }
                     return g;
                   })
-                };
-              }
-              return t;
-            })
-          );
-          break;
-
-        case 'GATE_STATUS_CHANGED':
-          setTemples((prevTemples) =>
-            prevTemples.map((t) => {
-              if (t.id === payload.templeId) {
-                return {
-                  ...t,
-                  gates: t.gates.map((g) => (g.id === payload.gateId ? { ...g, status: payload.status } : g))
                 };
               }
               return t;
@@ -185,13 +190,18 @@ export const YatraProvider = ({ children }) => {
       }
     });
 
-    // Auto join default family room
-    const currentCode = familyGroup.groupCode || 'TS-FAM-7X29A';
-    realtimeClient.joinGroup(currentCode, 'Devdutta', 'Lead Devotee', myCoords, myBattery);
+    // 6. Handle WebSocket Broadcasts
+    const unsubscribeWs = realtimeClient.subscribe((event) => {
+      const { type, payload } = event;
+      if (type === 'CONNECTION_STATE') {
+        setIsRealtimeConnected(payload.connected || peerMeshService.isReady);
+      }
+    });
 
     return () => {
       stopWatchingGPS(watchId);
-      unsubscribe();
+      unsubscribePeer();
+      unsubscribeWs();
     };
   }, []);
 
@@ -207,27 +217,35 @@ export const YatraProvider = ({ children }) => {
   const createFamily = (groupName, yourName) => {
     const newGroup = createNewFamilyGroup(groupName, yourName);
     setFamilyGroup(newGroup);
+    const deviceId = localStorage.getItem('tirthsaathi_device_id') || 'DEV-ME-01';
+
+    peerMeshService.init(newGroup.groupCode, deviceId, yourName, 'Lead Devotee');
     realtimeClient.joinGroup(newGroup.groupCode, yourName, 'Lead Devotee', myCoords, myBattery);
-    addToast('Family Group Created', `Private Circle Code: ${newGroup.groupCode}`, 'success');
+
+    addToast('Family Circle Created', `Private Code: ${newGroup.groupCode}`, 'success');
   };
 
   const joinFamily = (groupCode, yourName) => {
     const joined = joinExistingFamilyGroup(groupCode, yourName);
     setFamilyGroup(joined);
+    const deviceId = localStorage.getItem('tirthsaathi_device_id') || 'DEV-PHONE2';
+
+    peerMeshService.init(groupCode, deviceId, yourName, 'Devotee');
     realtimeClient.joinGroup(groupCode, yourName, 'Devotee', myCoords, myBattery);
+
     addToast('Connected to Family Circle', `Joined room ${groupCode}`, 'success');
   };
 
   const triggerBeacon = (targetMember) => {
     playSpiritualChimeBeacon();
     const targetId = targetMember.deviceId || targetMember.id;
+    peerMeshService.triggerBeacon(targetId, 'Devdutta');
     realtimeClient.triggerBeacon(targetId, 'Devdutta');
     addToast('Loud Chime Beacon Dispatched', `Beacon audio dispatched to ${targetMember.name || targetMember}.`, 'warning');
   };
 
   // Authority & Gate Management Broadcasts
   const updateGateCrowd = (templeId, gateId, delta) => {
-    // 1. Update local state
     setTemples((prev) =>
       prev.map((t) => {
         if (t.id === templeId) {
@@ -250,7 +268,8 @@ export const YatraProvider = ({ children }) => {
       })
     );
 
-    // 2. Broadcast to all other connected phones via WebSocket
+    // Broadcast to peer phones over WebRTC & WebSocket
+    peerMeshService.sendGateScan(templeId, gateId, delta, delta > 0 ? 'ENTRY' : 'EXIT');
     realtimeClient.sendGateScan(templeId, gateId, delta, delta > 0 ? 'ENTRY' : 'EXIT');
   };
 
