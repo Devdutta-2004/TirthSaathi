@@ -57,36 +57,43 @@ export const YatraProvider = ({ children }) => {
   // A. INITIALIZE DUAL-ENGINE: WEBRTC DIRECT P2P + WEBSOCKET MESH
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    const deviceId = localStorage.getItem('tirthsaathi_device_id') || 'DEV-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-    localStorage.setItem('tirthsaathi_device_id', deviceId);
+    let watchId = null;
 
-    const groupCode = familyGroup.groupCode || 'TS-FAM-7X29A';
-    const userName = localStorage.getItem('tirthsaathi_user_name') || 'Devdutta';
+    try {
+      const deviceId = localStorage.getItem('tirthsaathi_device_id') || 'DEV-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      localStorage.setItem('tirthsaathi_device_id', deviceId);
 
-    // 1. Initialize Direct WebRTC Peer-to-Peer Mesh (Works across any 4G/5G mobile data worldwide)
-    peerMeshService.init(groupCode, deviceId, userName, 'Devotee');
+      const groupCode = familyGroup.groupCode || 'TS-FAM-7X29A';
+      const userName = localStorage.getItem('tirthsaathi_user_name') || 'Devdutta';
 
-    // 2. Initialize Local WebSocket Client
-    realtimeClient.connect();
+      // 1. Initialize Direct WebRTC Peer-to-Peer Mesh
+      try { peerMeshService.init(groupCode, deviceId, userName, 'Devotee'); } catch (e) { console.warn('[Init] PeerJS:', e.message); }
 
-    // 3. Read Device Battery
-    getDeviceBattery().then((lvl) => setMyBattery(lvl));
+      // 2. Initialize Local WebSocket Client (skips on production automatically)
+      try { realtimeClient.connect(); } catch (e) { console.warn('[Init] WebSocket:', e.message); }
 
-    // 4. Start Physical GPS Location Tracking
-    const watchId = watchDeviceGPS(
-      (pos) => {
-        setMyCoords({ lat: pos.lat, lng: pos.lng });
-        setMyAccuracy(pos.accuracy);
-        setMyHeading(pos.heading);
+      // 3. Read Device Battery
+      getDeviceBattery().then((lvl) => setMyBattery(lvl)).catch(() => {});
 
-        // Stream real GPS update to both WebRTC peers & WebSocket server
-        peerMeshService.sendTelemetry({ lat: pos.lat, lng: pos.lng }, pos.accuracy, myBattery, pos.heading);
-        realtimeClient.sendTelemetry({ lat: pos.lat, lng: pos.lng }, pos.accuracy, myBattery, pos.heading);
-      },
-      (err) => {
-        console.warn('[GPS Provider] GPS satellite search:', err.message);
-      }
-    );
+      // 4. Start Physical GPS Location Tracking
+      watchId = watchDeviceGPS(
+        (pos) => {
+          setMyCoords({ lat: pos.lat, lng: pos.lng });
+          setMyAccuracy(pos.accuracy);
+          setMyHeading(pos.heading);
+
+          try {
+            peerMeshService.sendTelemetry({ lat: pos.lat, lng: pos.lng }, pos.accuracy, myBattery, pos.heading);
+            realtimeClient.sendTelemetry({ lat: pos.lat, lng: pos.lng }, pos.accuracy, myBattery, pos.heading);
+          } catch (e) { /* telemetry send failed, non-fatal */ }
+        },
+        (err) => {
+          console.warn('[GPS Provider] GPS satellite search:', err.message);
+        }
+      );
+    } catch (initError) {
+      console.warn('[YatraContext] Initialization notice:', initError.message);
+    }
 
     // 5. Handle WebRTC P2P Incoming Data
     const unsubscribePeer = peerMeshService.subscribe((event) => {

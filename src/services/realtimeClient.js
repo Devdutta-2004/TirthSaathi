@@ -1,6 +1,7 @@
 /**
  * TirthSaathi Realtime Client Manager
- * Manages WebSocket connection to the local backend server for multi-device sync
+ * Manages WebSocket connection to the local backend server for multi-device sync.
+ * On production (Vercel), WebSocket is skipped — PeerJS WebRTC handles all sync.
  */
 
 class RealtimeClient {
@@ -8,35 +9,49 @@ class RealtimeClient {
     this.socket = null;
     this.isConnected = false;
     this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 10;
-    this.reconnectInterval = 3000;
+    this.maxReconnectAttempts = 3;
+    this.reconnectInterval = 5000;
     this.listeners = new Set();
     this.currentGroupCode = null;
-    this.deviceId = this.getOrCreateDeviceId();
+    this.deviceId = this._getOrCreateDeviceId();
   }
 
-  getOrCreateDeviceId() {
-    let id = localStorage.getItem('tirthsaathi_device_id');
-    if (!id) {
-      id = 'DEV-' + Math.random().toString(36).substring(2, 7).toUpperCase();
-      localStorage.setItem('tirthsaathi_device_id', id);
+  _getOrCreateDeviceId() {
+    try {
+      let id = localStorage.getItem('tirthsaathi_device_id');
+      if (!id) {
+        id = 'DEV-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+        localStorage.setItem('tirthsaathi_device_id', id);
+      }
+      return id;
+    } catch (e) {
+      return 'DEV-' + Math.random().toString(36).substring(2, 7).toUpperCase();
     }
-    return id;
   }
 
-  getWebSocketUrl() {
-    const hostname = window.location.hostname || 'localhost';
-    const port = 3001;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${hostname}:${port}`;
+  _isLocalNetwork() {
+    try {
+      const h = window.location.hostname;
+      return h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.startsWith('10.');
+    } catch (e) {
+      return false;
+    }
   }
 
   connect() {
+    // Only attempt WebSocket connection on local network (localhost / 192.168.x.x)
+    // On production (Vercel), PeerJS WebRTC handles all real-time sync
+    if (!this._isLocalNetwork()) {
+      console.log('[Realtime Client] Production detected — WebRTC PeerJS handles sync. WebSocket skipped.');
+      return;
+    }
+
     if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
       return;
     }
 
-    const wsUrl = this.getWebSocketUrl();
+    const hostname = window.location.hostname || 'localhost';
+    const wsUrl = `ws://${hostname}:3001`;
     console.log(`[Realtime Client] Connecting to ${wsUrl}...`);
 
     try {
@@ -48,7 +63,6 @@ class RealtimeClient {
         this.reconnectAttempts = 0;
         this.notifyListeners({ type: 'CONNECTION_STATE', payload: { connected: true } });
 
-        // Auto re-join group if was previously connected
         if (this.currentGroupCode) {
           const userName = localStorage.getItem('tirthsaathi_user_name') || 'Pilgrim';
           this.joinGroup(this.currentGroupCode, userName);
@@ -65,25 +79,22 @@ class RealtimeClient {
       };
 
       this.socket.onclose = () => {
-        console.log('[Realtime Client] Disconnected from server.');
         this.isConnected = false;
         this.notifyListeners({ type: 'CONNECTION_STATE', payload: { connected: false } });
-        this.attemptReconnect();
+        this._attemptReconnect();
       };
 
-      this.socket.onerror = (err) => {
-        console.warn('[Realtime Client] WebSocket error (offline or server starting):', err);
+      this.socket.onerror = () => {
+        // Silently handle — expected when server.js is not running
       };
     } catch (e) {
-      console.warn('[Realtime Client] Could not initialize WebSocket:', e);
-      this.attemptReconnect();
+      console.warn('[Realtime Client] Could not initialize WebSocket:', e.message);
     }
   }
 
-  attemptReconnect() {
+  _attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`[Realtime Client] Reconnecting in ${this.reconnectInterval / 1000}s (Attempt ${this.reconnectAttempts})...`);
       setTimeout(() => this.connect(), this.reconnectInterval);
     }
   }
@@ -91,56 +102,29 @@ class RealtimeClient {
   send(type, payload = {}) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({ type, payload }));
-    } else {
-      console.warn('[Realtime Client] Cannot send, socket not open');
     }
   }
 
   joinGroup(groupCode, name, role = 'Member', coords = null, battery = 90) {
     this.currentGroupCode = groupCode;
-    localStorage.setItem('tirthsaathi_user_name', name || 'Devotee');
-    this.send('JOIN_GROUP', {
-      groupCode,
-      deviceId: this.deviceId,
-      name,
-      role,
-      coords,
-      battery
-    });
+    try { localStorage.setItem('tirthsaathi_user_name', name || 'Devotee'); } catch (e) {}
+    this.send('JOIN_GROUP', { groupCode, deviceId: this.deviceId, name, role, coords, battery });
   }
 
   sendTelemetry(coords, accuracy = 5, battery = 90, heading = 0) {
-    this.send('TELEMETRY_UPDATE', {
-      coords,
-      accuracy,
-      battery,
-      heading
-    });
+    this.send('TELEMETRY_UPDATE', { coords, accuracy, battery, heading });
   }
 
   triggerBeacon(targetDeviceId, senderName) {
-    this.send('BEACON_ALERT', {
-      targetDeviceId,
-      senderName: senderName || 'Family Member'
-    });
+    this.send('BEACON_ALERT', { targetDeviceId, senderName: senderName || 'Family Member' });
   }
 
   sendGateScan(templeId, gateId, delta, scanType = 'ENTRY', passCode = '') {
-    this.send('GATE_SCAN_EVENT', {
-      templeId,
-      gateId,
-      delta,
-      scanType,
-      passCode
-    });
+    this.send('GATE_SCAN_EVENT', { templeId, gateId, delta, scanType, passCode });
   }
 
   toggleGateStatus(templeId, gateId, status) {
-    this.send('GATE_STATUS_TOGGLE', {
-      templeId,
-      gateId,
-      status
-    });
+    this.send('GATE_STATUS_TOGGLE', { templeId, gateId, status });
   }
 
   subscribe(callback) {
@@ -150,11 +134,7 @@ class RealtimeClient {
 
   notifyListeners(data) {
     for (const listener of this.listeners) {
-      try {
-        listener(data);
-      } catch (err) {
-        console.error('[Realtime Client] Error in listener:', err);
-      }
+      try { listener(data); } catch (err) { /* swallow */ }
     }
   }
 }
