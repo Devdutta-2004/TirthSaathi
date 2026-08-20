@@ -1,0 +1,62 @@
+export const religiousEvents = [
+  {
+    id: 1,
+    title: 'Maha Ganga Aarti & Deepdan',
+    location: 'Har Ki Pauri, Haridwar',
+    date: 'Today & Daily',
+    time: '6:30 PM - 7:30 PM',
+    status: 'Live in 45 min',
+    isLiveSoon: true,
+    image: '/images/ganga_aarti.jpg',
+    category: 'Maha Aarti',
+    priests: 'Ganga Sabha Archakas',
+    crowdEstimate: 'Approx. 25,000 Devotees',
+    description: 'The world-famous evening Ganga Aarti where sacred chanting echoes across the river as towering brass lamps are waved in unison by priests, accompanied by thousands of illuminated floating leaf-diyas.',
+    tips: 'Reach platform 2 or Malviya Ghat by 5:30 PM for unobstructed views and elderly seating.'
+  },
+  {
+    id: 2,
+    title: 'Shree Ram Katha & Sunderkand Mahotsav',
+    location: 'Saryu Riverfront Pavilion, Ayodhya',
+    date: 'Every Evening',
+    time: '5:00 PM - 8:30 PM',
+    status: 'Ongoing Daily',
+    isLiveSoon: false,
+    image: '/images/ayodhya_ram_mandir.jpg',
+    category: 'Spiritual Discourse',
+    priests: 'Revered Saints & Scholars',
+    crowdEstimate: 'Approx. 12,000 Devotees',
+    description: 'Soulful recitation of Sri Ramcharitmanas along with classical bhajans, philosophical discourses on righteousness, and collective Sunderkand Path on the illuminated banks of holy Saryu.',
+    tips: 'Free seating carpets and audio headphones available for elderly yatris.'
+  },
+  {
+    id: 3,
+    title: 'Kashi Vishwanath Shringar & Mangala Aarti',
+    location: 'Main Sanctum, Varanasi',
+    date: 'Daily Early Morning',
+    time: '3:00 AM - 4:15 AM',
+    status: 'Booking Open',
+    isLiveSoon: false,
+    image: '/images/varanasi_kashi.jpg',
+    category: 'Special Darshan',
+    priests: 'Kashi Vishwanath Nyas',
+    crowdEstimate: 'Pre-registered Token Yatris',
+    description: 'The most sacred predawn ritual where Lord Shiva (Visheshwara) is awakened with Vedic stotras, bilva patra offerings, fresh flowers, and profound damru rhythms before the morning sun rises.',
+    tips: 'Valid Pilgrim ID and entry pass required at Gate No. 4 (Silversmith Lane).'
+  },
+  {
+    id: 4,
+    title: 'Sri Venkateswara Sahasra Deepalankara Seva',
+    location: 'Unjal Mandapam, Tirumala Tirupati',
+    date: 'Every Evening',
+    time: '5:30 PM - 6:45 PM',
+    status: 'Scheduled',
+    isLiveSoon: false,
+    image: '/images/tirupati_balaji.jpg',
+    category: 'Temple Festival',
+    priests: 'TTD Archaka Board',
+    crowdEstimate: 'Approx. 8,000 Devotees',
+    description: 'The Lord and His consorts are placed on an ornate golden swing (Unjal) amidst the radiance of one thousand sacred oil lamps while Annamacharya kirtanas are melodiously rendered.',
+    tips: 'Traditional dress code mandatory (Dhoti/Kurta for men, Saree/Churidar for women).'
+  }
+];

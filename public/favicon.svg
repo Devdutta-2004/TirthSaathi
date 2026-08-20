@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Outer glowing beacon circle -->
+  <circle cx="24" cy="24" r="22" fill="#EAF5FF" stroke="#1261C9" stroke-width="2"/>
+  
+  <!-- Protective Aura / Safe Shield ring -->
+  <path d="M24 6C15.163 6 8 13.163 8 22c0 9.8 12.8 19.2 14.8 20.6.7.5 1.7.5 2.4 0C27.2 41.2 40 31.8 40 22c0-8.837-7.163-16-16-16z" fill="#1261C9" opacity="0.1"/>
+  
+  <!-- Location Pin Outline -->
+  <path d="M24 7C16.268 7 10 13.268 10 21c0 8.5 11.2 17.5 13.1 19a1.5 1.5 0 0 0 1.8 0C26.8 38.5 38 29.5 38 21c0-7.732-6.268-14-14-14z" fill="url(#brandGrad)" stroke="#0B2545" stroke-width="1.5"/>
+  
+  <!-- Temple Shikhara + Kalash (Sacred Indian Architecture in Pin) -->
+  <path d="M24 12L21 17H27L24 12Z" fill="#F6C453"/>
+  <path d="M24 10V12" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="24" cy="9.5" r="1.5" fill="#F59E0B"/>
+  
+  <!-- Temple Body / Mandap Gate -->
+  <path d="M19 17H29V25H19V17Z" fill="#FFFFFF"/>
+  <path d="M21 25V20C21 18.895 22.343 18 24 18C25.657 18 27 18.895 27 20V25" fill="#1261C9"/>
+  
+  <!-- Guiding Path / Radiance Arc -->
+  <path d="M16 28C18.5 26.5 21 26 24 26C27 26 29.5 26.5 32 28" stroke="#5EB7F5" stroke-width="2" stroke-linecap="round"/>
+  
+  <defs>
+    <linearGradient id="brandGrad" x1="10" y1="7" x2="38" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1683E8"/>
+      <stop offset="1" stop-color="#0B2545"/>
+    </linearGradient>
+  </defs>
+</svg>
