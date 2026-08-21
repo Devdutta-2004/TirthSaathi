@@ -11,6 +11,7 @@
     "vercel-build": "npm install --install-scripts && vite build"
   },
   "dependencies": {
+    "@vladmandic/face-api": "^1.7.15",
     "clsx": "^2.1.1",
     "firebase": "^12.18.0",
     "framer-motion": "^12.4.7",
