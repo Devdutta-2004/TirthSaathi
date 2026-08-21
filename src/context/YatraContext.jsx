@@ -6,6 +6,7 @@ import { initOfflineSync, getOfflineQueue } from '../services/offlineSyncService
 import { realtimeClient } from '../services/realtimeClient';
 import { peerMeshService } from '../services/peerService';
 import { watchDeviceGPS, stopWatchingGPS, getDeviceBattery, playSpiritualChimeBeacon } from '../services/geoService';
+import { sampleLostReports } from '../data/lostFound';
 
 const YatraContext = createContext();
 
@@ -42,7 +43,36 @@ export const YatraProvider = ({ children }) => {
   // 7. Passes & Tickets
   const [passes, setPasses] = useState(getStoredPasses());
 
-  // 8. Toast Notifications
+  // 8. Lost & Found / PunarMilan AI Database
+  const [lostReports, setLostReports] = useState(sampleLostReports);
+
+  const addLostReport = (report) => {
+    const newReport = {
+      id: `TS-LF-${Math.floor(1000 + Math.random() * 9000)}`,
+      type: 'person',
+      name: report.name,
+      age: report.age || 'Unspecified',
+      gender: report.gender || 'Male',
+      avatar: report.gender === 'Female' ? '👵' : report.gender === 'Child' ? '👦' : '👨',
+      status: 'Active Search in Progress',
+      statusCode: 'searching',
+      lastSeen: report.lastSeen,
+      time: 'Just now',
+      wearing: report.wearing || 'Traditional attire',
+      languages: report.languages || 'Hindi',
+      matchedBooth: 'Broadcast sent to Temple Police & Volunteers',
+      contactPerson: report.contactPerson || 'Family Member',
+      badge: 'Priority Alert'
+    };
+    setLostReports((prev) => [newReport, ...prev]);
+    addToast(
+      'Broadcast & AI Facial Index Active',
+      `Case ${newReport.id} registered for ${newReport.name}. Broadcast sent to all checkpoints.`,
+      'success'
+    );
+  };
+
+  // 9. Toast Notifications
   const [toasts, setToasts] = useState([]);
 
   const addToast = (title, message, type = 'info') => {
@@ -341,6 +371,8 @@ export const YatraProvider = ({ children }) => {
         triggerBeacon,
         passes,
         refreshPasses,
+        lostReports,
+        addLostReport,
         toasts,
         addToast
       }}

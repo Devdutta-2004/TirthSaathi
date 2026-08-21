@@ -5,7 +5,7 @@ import { LiveGPSMap } from '../components/map/LiveGPSMap';
 import {
   Users, QrCode, Share2, Copy, Check, MapPin, Bell, Phone, Navigation,
   RefreshCw, Battery, Wifi, Shield, Clock, UserPlus, Compass, AlertCircle,
-  Sparkles, Radio, Eye, X, ChevronDown, Volume2, Locate, ArrowUp
+  Sparkles, Radio, Eye, X, ChevronDown, Volume2, Locate, ArrowUp, Scan
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
@@ -15,7 +15,8 @@ import {
 export const FinderScreen = () => {
   const {
     familyGroup, createFamily, joinFamily, triggerBeacon,
-    networkStatus, isRealtimeConnected, myCoords, myAccuracy, myHeading, myBattery, addToast
+    networkStatus, isRealtimeConnected, myCoords, myAccuracy, myHeading, myBattery, addToast,
+    setCurrentScreen
   } = useYatra();
 
   const [view, setView] = useState('people');       // 'people' | 'precision' | 'map'
@@ -95,11 +96,30 @@ export const FinderScreen = () => {
   ──────────────────────────────────────────── */
   const renderPeopleList = () => (
     <div className="space-y-4 animate-fadeIn">
+      {/* PunarMilan AI Facial Finder Quick Banner */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-gold-500/15 via-gold-500/10 to-amber-500/15 border border-gold-500/30 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gold-500 text-navy-950 flex items-center justify-center font-bold text-xs shadow-xs">
+            <Scan className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-navy-900">PunarMilan AI (Lost Member Face Match)</h4>
+            <p className="text-[11px] text-slate-600">Scan photo across 14,000+ temple CCTV checkpoints</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setCurrentScreen('punarmilan')}
+          className="px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs flex-shrink-0 transition-colors"
+        >
+          Open AI Scanner
+        </button>
+      </div>
+
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-navy-900 tracking-tight" style={{ fontFamily: "'SF Pro Display', 'Plus Jakarta Sans', system-ui" }}>
-            Find My People
+          <h1 className="text-xl font-extrabold text-navy-900 tracking-tight">
+            Family Live Radar
           </h1>
           <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
             <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
@@ -110,16 +130,19 @@ export const FinderScreen = () => {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleCopyCode}
-            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
-            {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4 text-slate-600" />}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+            title="Share Circle Code">
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5 text-slate-600" />}
           </button>
           <button onClick={() => setShowJoinModal(true)}
-            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
-            <UserPlus className="w-4 h-4 text-slate-600" />
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+            title="Join Circle">
+            <UserPlus className="w-3.5 h-3.5 text-slate-600" />
           </button>
           <button onClick={() => setView('map')}
-            className="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-colors shadow-sm">
-            <MapPin className="w-4 h-4 text-white" />
+            className="w-8 h-8 rounded-full bg-navy-900 hover:bg-navy-800 flex items-center justify-center transition-colors shadow-xs"
+            title="View Live GPS Map">
+            <MapPin className="w-3.5 h-3.5 text-white" />
           </button>
         </div>
       </div>

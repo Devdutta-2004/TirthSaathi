@@ -5,6 +5,7 @@ import { AppLayout } from './components/layout/AppLayout';
 // Dedicated App Screens
 import { HomeScreen } from './screens/HomeScreen';
 import { FinderScreen } from './screens/FinderScreen';
+import { PunarMilanAIScreen } from './screens/PunarMilanAIScreen';
 import { CrowdFlowScreen } from './screens/CrowdFlowScreen';
 import { AuthorityScreen } from './screens/AuthorityScreen';
 import { NearbyScreen } from './screens/NearbyScreen';
@@ -28,6 +29,8 @@ function ScreenRenderer() {
   switch (currentScreen) {
     case 'home':
       return <HomeScreen />;
+    case 'punarmilan':
+      return <PunarMilanAIScreen />;
     case 'finder':
       return <FinderScreen />;
     case 'crowd':

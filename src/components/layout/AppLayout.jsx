@@ -21,7 +21,7 @@ import {
   Palette,
   QrCode,
   Radio,
-  Menu,
+  Scan,
   X
 } from 'lucide-react';
 
@@ -43,23 +43,24 @@ export const AppLayout = ({ children }) => {
   const [themePickerOpen, setThemePickerOpen] = useState(false);
 
   const navItems = [
-    { id: 'home', label: 'Mukhya Dham (Home)', icon: Home, symbol: '🛕', badge: null },
-    { id: 'finder', label: 'Family Raksha Finder', icon: Users, symbol: '👨‍👩‍👧', badge: 'Flagship', badgeColor: 'bg-gold-500 text-navy-950' },
+    { id: 'home', label: 'Home (Dham)', icon: Home, symbol: '🛕', badge: null },
+    { id: 'punarmilan', label: 'PunarMilan AI', icon: Scan, symbol: '✨', badge: 'Face AI', badgeColor: 'bg-gold-500 text-navy-950' },
+    { id: 'finder', label: 'Family Live Radar', icon: Users, symbol: '👨‍👩‍👧', badge: 'Radar', badgeColor: 'bg-blue-600 text-white' },
     { id: 'crowd', label: 'TirthSaathi Flow', icon: Compass, symbol: '🧭', badge: 'Smart Gate', badgeColor: 'bg-emerald-600 text-white' },
     { id: 'nearby', label: 'Annakshetra & Bhandaras', icon: MapPin, symbol: '🍛', badge: null },
     { id: 'explore', label: 'Sacred Temples', icon: Sparkles, symbol: '🕉️', badge: null },
     { id: 'events', label: 'Aarti & Utsav', icon: Calendar, symbol: '🪔', badge: 'Live' },
     { id: 'ai', label: 'AI Margdarshak', icon: Bot, symbol: '🤖', badge: '24x7' },
-    { id: 'emergency', label: 'Emergency Kavach (SOS)', icon: ShieldAlert, symbol: '🛡️', badge: null, isDanger: true },
-    { id: 'authority', label: 'Temple Command Center', icon: Building2, symbol: '🏛️', badge: 'Trust', badgeColor: 'bg-gold-400 text-navy-950' },
+    { id: 'emergency', label: 'Emergency SOS', icon: ShieldAlert, symbol: '🛡️', badge: null, isDanger: true },
+    { id: 'authority', label: 'Command Center', icon: Building2, symbol: '🏛️', badge: 'Trust', badgeColor: 'bg-gold-400 text-navy-950' },
     { id: 'profile', label: 'Yatra Pass & Profile', icon: User, symbol: '📜', badge: null },
   ];
 
   const bottomNavItems = [
     { id: 'home', label: 'Home', icon: Home, symbol: '🛕' },
-    { id: 'finder', label: 'Finder', icon: Users, symbol: '👨‍👩‍👧' },
+    { id: 'punarmilan', label: 'PunarMilan', icon: Scan, symbol: '✨' },
+    { id: 'finder', label: 'Radar', icon: Users, symbol: '👨‍👩‍👧' },
     { id: 'crowd', label: 'Flow', icon: Compass, symbol: '🧭' },
-    { id: 'nearby', label: 'Bhandaras', icon: MapPin, symbol: '🍛' },
     { id: 'profile', label: 'Pass', icon: User, symbol: '📜' },
   ];
 
