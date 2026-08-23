@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useYatra } from '../context/YatraContext';
-import { createEntryPass, getStoredPasses } from '../services/passService';
+import { createEntryPass } from '../services/passService';
 import {
   MapPin,
   Search,
@@ -23,7 +23,10 @@ import {
   Users,
   Footprints,
   ArrowRight,
-  Check
+  Check,
+  CircleDot,
+  Ticket,
+  BadgePercent
 } from 'lucide-react';
 
 export const HomeScreen = () => {
@@ -49,7 +52,7 @@ export const HomeScreen = () => {
   const [generatedPass, setGeneratedPass] = useState(null);
   const [genericDetailModal, setGenericDetailModal] = useState(null);
 
-  // Minimal Category Bar Items
+  // Minimal Category Bar Items with Single-Color Lucide Icons
   const categories = [
     { id: 'for_you', label: 'For you', icon: Sparkles },
     { id: 'temples', label: 'Temples', icon: Compass },
@@ -244,14 +247,14 @@ export const HomeScreen = () => {
     }
   ];
 
-  // Verified Fair-Price Cabs & Auto Rate Cards
+  // Verified Fair-Price Cabs & Auto Rate Cards with Clean Single-Color Lucide Icons
   const fairTransit = [
     {
       id: 'erickshaw',
       type: 'E-Rickshaw (Shared)',
       price: '₹20 – ₹40',
       badge: 'Eco-Friendly',
-      icon: '🛺',
+      icon: Car,
       rateDetail: 'Govt Fixed Shared Fare per person for short temple corridor hops.'
     },
     {
@@ -259,7 +262,7 @@ export const HomeScreen = () => {
       type: 'Prepaid Auto Rickshaw',
       price: '₹50 Base + ₹12/km',
       badge: 'Meter Verified',
-      icon: '🛺',
+      icon: Navigation,
       rateDetail: 'Official RTO Approved Meter Fare directly from railway stations.'
     },
     {
@@ -267,7 +270,7 @@ export const HomeScreen = () => {
       type: 'Senior Citizen Electric Buggy',
       price: '₹0 (Free Seva)',
       badge: '100% Free Seva',
-      icon: '⚡',
+      icon: Zap,
       rateDetail: 'Free electric buggy transport for seniors and differently-abled devotees.'
     },
     {
@@ -275,7 +278,7 @@ export const HomeScreen = () => {
       type: 'Authorized Pilgrim Taxi',
       price: '₹14 / km',
       badge: 'Fixed Tariff',
-      icon: '🚕',
+      icon: Car,
       rateDetail: 'Standard Outstation & Local Airport/Cantt Station tariff.'
     }
   ];
@@ -305,18 +308,18 @@ export const HomeScreen = () => {
     setBookingTemple(null);
     setGeneratedPass(pass);
     addToast(
-      '🎟️ Darshan Pass Confirmed & ML Indexed!',
+      'Darshan Pass Confirmed & ML Indexed',
       `Pass #${pass.passCode} issued for ${bookingTemple.name}. Leading crowd signal updated!`,
       'success'
     );
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 animate-fadeIn pb-24 bg-amber-50/20 min-h-screen">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 animate-fadeIn pb-24 bg-amber-50/30 min-h-screen">
       {/* ── 1. SACRED TOP BAR (LOCATION & PROFILE) ── */}
       <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentScreen('crowd')}>
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setCurrentScreen('crowd')}>
+          <div className="w-10 h-10 rounded-2xl bg-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-600/20">
             <MapPin className="w-5 h-5" />
           </div>
           <div>
@@ -364,12 +367,15 @@ export const HomeScreen = () => {
             </h3>
 
             <div className="flex items-center gap-3 text-xs text-amber-100">
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-amber-300" />
                 <span>Est. Wait: <strong>~18 mins</strong></span>
               </span>
               <span className="text-white/40">•</span>
-              <span className="text-emerald-300 font-bold">🟢 Recommended: Gate 2</span>
+              <span className="flex items-center gap-1 text-emerald-300 font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Recommended: Gate 2</span>
+              </span>
             </div>
           </div>
 
@@ -403,7 +409,7 @@ export const HomeScreen = () => {
                   : 'bg-white text-amber-900 hover:bg-amber-50 border border-amber-200/80 shadow-xs'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-4 h-4 text-amber-600" />
               <span>{cat.label}</span>
             </button>
           );
@@ -431,7 +437,7 @@ export const HomeScreen = () => {
                 alt={state.stateName}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-950/90 via-black/40 to-transparent" />
 
               <div className="absolute top-3 left-3">
                 <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-500 text-navy-950 shadow-sm font-display">
@@ -442,7 +448,8 @@ export const HomeScreen = () => {
               <div className="absolute bottom-4 left-4 right-4 text-white space-y-0.5">
                 <h4 className="font-extrabold text-base tracking-tight font-display">{state.stateName}</h4>
                 <p className="text-[11px] text-amber-200/90 truncate">{state.tagline}</p>
-                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-bold pt-1">
+                <span className="inline-flex items-center gap-1.5 text-[10px] text-amber-300 font-bold pt-1">
+                  <Ticket className="w-3.5 h-3.5 text-amber-300" />
                   <span>{state.shrines.length} Famous Temples • Slotted Darshan Pass</span>
                   <ChevronRight className="w-3 h-3" />
                 </span>
@@ -488,8 +495,8 @@ export const HomeScreen = () => {
               <div className="p-3.5 space-y-0.5">
                 <h4 className="font-bold text-xs text-amber-950 truncate">{event.title}</h4>
                 <p className="text-[11px] text-amber-800/70 truncate">{event.subtitle}</p>
-                <div className="flex items-center gap-1 text-[10px] text-amber-800 font-bold pt-1">
-                  <Clock className="w-3 h-3 text-amber-600" />
+                <div className="flex items-center gap-1.5 text-[10px] text-amber-800 font-bold pt-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
                   <span>{event.time}</span>
                 </div>
               </div>
@@ -552,24 +559,29 @@ export const HomeScreen = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {fairTransit.map((t) => (
-            <div
-              key={t.id}
-              onClick={() => setGenericDetailModal(t)}
-              className="bg-white rounded-2xl p-3 border border-amber-200/80 shadow-xs hover:border-amber-300 transition-all cursor-pointer space-y-1.5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xl">{t.icon}</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                  {t.badge}
-                </span>
+          {fairTransit.map((t) => {
+            const IconComp = t.icon;
+            return (
+              <div
+                key={t.id}
+                onClick={() => setGenericDetailModal(t)}
+                className="bg-white rounded-2xl p-3 border border-amber-200/80 shadow-xs hover:border-amber-300 transition-all cursor-pointer space-y-1.5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
+                    <IconComp className="w-4 h-4" />
+                  </div>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                    {t.badge}
+                  </span>
+                </div>
+                <div>
+                  <h5 className="font-bold text-xs text-amber-950 truncate">{t.type}</h5>
+                  <strong className="text-sm font-black text-emerald-800 font-display block">{t.price}</strong>
+                </div>
               </div>
-              <div>
-                <h5 className="font-bold text-xs text-amber-950 truncate">{t.type}</h5>
-                <strong className="text-sm font-black text-emerald-800 font-display block">{t.price}</strong>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -620,8 +632,9 @@ export const HomeScreen = () => {
                       </span>
                     </div>
                     <p className="text-[11px] text-amber-800/70">{shrine.city} • Est. Wait {shrine.liveWait}</p>
-                    <span className="text-[10px] text-emerald-700 font-bold">
-                      🟢 {shrine.slotsLeft} Online Passes Available Today
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-800 font-bold">
+                      <CircleDot className="w-2.5 h-2.5 text-emerald-600" />
+                      <span>{shrine.slotsLeft} Passes Available Today</span>
                     </span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
@@ -703,7 +716,10 @@ export const HomeScreen = () => {
                     >
                       <span className="font-bold text-xs text-navy-900 block">{s.slot}</span>
                       <span className="text-[10px] text-slate-500 block">{s.label}</span>
-                      <span className="text-[9px] font-bold text-emerald-700 block">● {s.left}</span>
+                      <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-800">
+                        <CircleDot className="w-2.5 h-2.5 text-emerald-600" />
+                        <span>{s.left}</span>
+                      </span>
                     </button>
                   ))}
                 </div>
