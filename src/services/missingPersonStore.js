@@ -499,3 +499,88 @@ export async function syncToSupabase(tableName, record) {
     console.warn(`[Supabase] Sync notice for ${tableName}:`, err.message);
   }
 }
+
+export async function syncAllFromSupabaseCloud() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return;
+  try {
+    const remoteProfiles = await fetchFromSupabase('missing_persons');
+    if (remoteProfiles && Array.isArray(remoteProfiles) && remoteProfiles.length > 0) {
+      const mapped = remoteProfiles.map((p) => ({
+        id: p.id,
+        name: p.name,
+        age: p.age,
+        gender: p.gender,
+        avatar: p.avatar || (p.gender === 'Female' ? '👵' : p.age < 15 ? '👦' : '👨'),
+        image: p.image,
+        lastSeen: p.last_seen || p.lastSeen || 'Temple Grounds',
+        lastSeenCoords: p.last_seen_coords || p.lastSeenCoords || { lat: 25.3109, lng: 83.0107 },
+        checkpoint: p.checkpoint || 'Main Gate Checkpoint',
+        timeReported: p.time_reported || p.timeReported || 'Recently',
+        status: p.status || 'searching',
+        statusLabel: p.status_label || p.statusLabel || 'Active Search in Progress',
+        attire: p.attire || 'Traditional attire',
+        contactPerson: p.contact_person || p.contactPerson || 'Family Guardian',
+        contactPhone: p.contact_phone || p.contactPhone || '+91 Emergency Contact',
+        languages: p.languages || 'Hindi',
+        medicalNotes: p.medical_notes || p.medicalNotes || 'None',
+        sightingsCount: p.sightings_count || p.sightingsCount || 0,
+        isRealUserUpload: true,
+        createdAt: p.created_at || new Date().toISOString()
+      }));
+
+      writeStorage(STORAGE_KEYS.MISSING_PERSONS, mapped);
+    }
+
+    const remoteSightings = await fetchFromSupabase('citizen_sightings');
+    if (remoteSightings && Array.isArray(remoteSightings) && remoteSightings.length > 0) {
+      const mappedSightings = remoteSightings.map((s) => ({
+        id: s.id,
+        matchedCaseId: s.matched_case_id || s.matchedCaseId,
+        personName: s.person_name || s.personName,
+        reportedBy: s.reported_by || s.reportedBy,
+        reporterPhone: s.reporter_phone || s.reporterPhone,
+        photoUrl: s.photo_url || s.photoUrl,
+        locationName: s.location_name || s.locationName,
+        coords: s.coords,
+        conditionNotes: s.condition_notes || s.conditionNotes,
+        similarityScore: s.similarity_score || s.similarityScore,
+        euclideanDistance: s.euclidean_distance || s.euclideanDistance,
+        status: s.status,
+        timestamp: s.timestamp
+      }));
+      writeStorage(STORAGE_KEYS.CITIZEN_SIGHTINGS, mappedSightings);
+    }
+
+    const remoteLogs = await fetchFromSupabase('ai_accuracy_logs');
+    if (remoteLogs && Array.isArray(remoteLogs) && remoteLogs.length > 0) {
+      const mappedLogs = remoteLogs.map((l) => ({
+        queryId: l.query_id || l.queryId,
+        timestamp: l.timestamp,
+        sourceType: l.source_type || l.sourceType,
+        detectedAge: l.detected_age || l.detectedAge,
+        detectedGender: l.detected_gender || l.detectedGender,
+        genderConfidence: l.gender_confidence || l.genderConfidence,
+        landmarkCount: l.landmark_count || l.landmarkCount,
+        matchedCaseId: l.matched_case_id || l.matchedCaseId,
+        matchedName: l.matched_name || l.matchedName,
+        euclideanDistance: l.euclidean_distance || l.euclideanDistance,
+        similarityPercent: l.similarity_percent || l.similarityPercent,
+        isMatchFound: l.is_match_found || l.isMatchFound,
+        inferenceTimeMs: l.inference_time_ms || l.inferenceTimeMs,
+        groundTruthStatus: l.ground_truth_status || l.groundTruthStatus,
+        reviewerNotes: l.reviewer_notes || l.reviewerNotes
+      }));
+      writeStorage(STORAGE_KEYS.AI_AUDIT_LOGS, mappedLogs);
+    }
+
+    notifyDbUpdate();
+  } catch (err) {
+    console.warn('[Supabase] Cloud sync error:', err.message);
+  }
+}
+
+// Auto-sync on module load in browser
+if (typeof window !== 'undefined') {
+  syncAllFromSupabaseCloud();
+}
+
