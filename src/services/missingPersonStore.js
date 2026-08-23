@@ -629,14 +629,38 @@ export function exportGovernmentDocketJSON() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 7. ASYNC SUPABASE REST SYNC HELPER
+// 7. ASYNC SUPABASE REST SYNC & FETCH HELPER
 // ─────────────────────────────────────────────────────────────
 
-async function syncToSupabase(tableName, record) {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return;
+export async function fetchFromSupabase(tableName) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
+  try {
+    const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}?select=*`;
+    const res = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (err) {
+    console.warn(`[Supabase] Fetch error for ${tableName}:`, err.message);
+  }
+  return null;
+}
+
+export async function syncToSupabase(tableName, record) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.info(`[Database] Storing ${tableName} locally in browser DBMS (Supabase anon key pending in .env)`);
+    return;
+  }
   try {
     const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}`;
-    await fetch(endpoint, {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -646,6 +670,12 @@ async function syncToSupabase(tableName, record) {
       },
       body: JSON.stringify(record)
     });
+    if (res.ok) {
+      console.log(`[Supabase PostgreSQL] Record successfully synced to table: ${tableName}`);
+    } else {
+      const errorText = await res.text();
+      console.warn(`[Supabase] Table sync notice for ${tableName}:`, errorText);
+    }
   } catch (err) {
     console.warn(`[Supabase] Sync notice for ${tableName}:`, err.message);
   }
