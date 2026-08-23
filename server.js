@@ -116,6 +116,43 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Cloudflare R2 Image Proxy / Streaming Endpoint
+  if (req.url.startsWith('/api/image') && req.method === 'GET') {
+    try {
+      const urlObj = new URL(req.url, `http://${req.headers.host}`);
+      const key = urlObj.searchParams.get('key') || urlObj.pathname.replace('/api/image/', '');
+      if (!key) {
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.end('Missing image key parameter');
+        return;
+      }
+
+      const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '6644bbf132e15283de9de0000020a428';
+      const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME || 'musicapp-storage';
+      const accessKey = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || '35d3a19b63b58aea7d9a65d5b4b4c5c2';
+      const secretKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '0c3d9dd88187989ccaf47eb570d33c35ffddd089e6958c9ca4e3ebf64d957ac9';
+
+      const s3 = new S3Client({
+        region: 'auto',
+        endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+        credentials: { accessKeyId: accessKey, secretAccessKey: secretKey }
+      });
+
+      const s3Obj = await s3.send(new GetObjectCommand({ Bucket: bucketName, Key: key }));
+      res.writeHead(200, {
+        'Content-Type': s3Obj.ContentType || 'image/jpeg',
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      });
+      s3Obj.Body.pipe(res);
+      return;
+    } catch (err) {
+      console.error('[Server] Image stream error:', err.message);
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Image not found in Cloudflare R2 bucket');
+      return;
+    }
+  }
+
   res.writeHead(404);
   res.end('Not Found');
 });
