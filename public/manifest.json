@@ -1,0 +1,19 @@
+{
+  "name": "TirthSaathi - Sacred Pilgrimage Companion",
+  "short_name": "TirthSaathi",
+  "description": "Family finder, intelligent temple crowd flow, and offline pilgrimage assistance platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B2545",
+  "theme_color": "#1261C9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "utilities", "safety"]
+}

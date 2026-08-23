@@ -57,53 +57,43 @@ export const loadFaceModels = async () => {
 };
 
 /**
- * Helper to load an image source into HTMLImageElement
+ * Helper to load an image source into HTMLImageElement safely (CORS & Base64 safe)
  */
 export const loadImageElement = (src) => {
   return new Promise((resolve, reject) => {
+    if (!src) return reject(new Error('Image source is missing.'));
+    if (typeof HTMLImageElement !== 'undefined' && src instanceof HTMLImageElement) {
+      if (src.complete && src.naturalWidth > 0) return resolve(src);
+    }
+
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    
+    // Only set crossOrigin for remote HTTP/HTTPS URLs (never for data: or blob: URLs)
+    const isRemote = typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'));
+    if (isRemote) {
+      img.crossOrigin = 'anonymous';
+    }
+
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Failed to load image source for facial analysis.'));
+    img.onerror = () => {
+      // If remote failed with crossOrigin, retry without crossOrigin
+      if (isRemote && img.crossOrigin) {
+        const retryImg = new Image();
+        retryImg.onload = () => resolve(retryImg);
+        retryImg.onerror = () => reject(new Error('Failed to load image source.'));
+        retryImg.src = src;
+      } else {
+        reject(new Error('Failed to load image source.'));
+      }
+    };
     img.src = src;
   });
 };
 
 /**
- * Benchmark Preset Devotees for Testing
+ * Benchmark Preset Devotees (Clean - Populated on Real User Uploads & Verifications)
  */
-export const PRESET_TEST_PHOTOS = [
-  {
-    id: 'preset-1',
-    label: 'Grandfather (68y)',
-    tag: 'Match #8841',
-    name: 'Rameshwar Sharma',
-    avatar: '👨‍🦳',
-    description: 'Gold glasses, white kurta',
-    previewUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-    targetMatchId: 'TS-CASE-8841'
-  },
-  {
-    id: 'preset-2',
-    label: 'Lost Boy (8y)',
-    tag: 'Match #8842',
-    name: 'Aarav Gupta',
-    avatar: '👦',
-    description: 'Young boy with bright smile',
-    previewUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
-    targetMatchId: 'TS-CASE-8842'
-  },
-  {
-    id: 'preset-3',
-    label: 'Unregistered Devotee',
-    tag: 'Non-Match (Different Person)',
-    name: 'Vikram Mehta (Test Unknown)',
-    avatar: '🧑',
-    description: 'Photo not in database to verify mismatch rejection',
-    previewUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-    targetMatchId: null
-  }
-];
+export const PRESET_TEST_PHOTOS = [];
 
 /**
  * Extract 128D descriptor vector from an image element or URL

@@ -45,18 +45,28 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
+  // Skip non-http/https schemes and cross-origin requests (e.g. CDNs, Vercel SSO, analytics)
+  if (!url.protocol.startsWith('http')) return;
+  if (url.origin !== self.location.origin) return;
+
   // 1. Navigation requests (HTML) -> Network First, fallback to cached index.html
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          if (response.ok) {
+          if (response && response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
           return response;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+        .catch(() => 
+          caches.match(event.request).then((cached) => 
+            cached || caches.match('/index.html').then((indexCached) => 
+              indexCached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })
+            )
+          )
+        )
     );
     return;
   }
@@ -66,13 +76,17 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          if (response.ok) {
+          if (response && response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => 
+          caches.match(event.request).then((cached) => 
+            cached || new Response(null, { status: 404 })
+          )
+        )
     );
     return;
   }
@@ -90,7 +104,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
+        .catch(() => cachedResponse || new Response(null, { status: 404 }));
 
       return cachedResponse || fetchPromise;
     })
