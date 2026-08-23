@@ -39,11 +39,9 @@ class PeerMeshService {
     this.userRole = userRole;
     this.myPeerId = this.formatPeerId(groupCode, deviceId);
 
-    console.log(`[WebRTC Mesh] Initializing Peer ID: ${this.myPeerId}`);
-
     try {
       this.peer = new Peer(this.myPeerId, {
-        debug: 1,
+        debug: 0, // Clean production mode (no noisy console logs)
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
@@ -55,7 +53,6 @@ class PeerMeshService {
       });
 
       this.peer.on('open', (id) => {
-        console.log(`[WebRTC Mesh] Connected to global signaling network with ID: ${id} ⚡`);
         this.isReady = true;
         this.notifyListeners({ type: 'PEER_READY', payload: { peerId: id } });
 
@@ -64,33 +61,28 @@ class PeerMeshService {
       });
 
       this.peer.on('connection', (conn) => {
-        console.log(`[WebRTC Mesh] Incoming connection from: ${conn.peer}`);
         this.setupConnection(conn);
       });
 
       this.peer.on('error', (err) => {
-        // ID taken is normal during mesh discovery reconnection
-        if (err.type === 'unavailable-id') {
-          console.log('[WebRTC Mesh] Peer ID in use, joining as subscriber...');
-        } else {
-          console.warn('[WebRTC Mesh] Notice:', err.type, err.message);
+        // Suppress benign peer discovery errors when other group members are offline
+        if (err.type === 'unavailable-id' || err.type === 'peer-unavailable') {
+          return;
         }
       });
 
       this.peer.on('disconnected', () => {
-        console.log('[WebRTC Mesh] Reconnecting signaling...');
         if (this.peer && !this.peer.destroyed) {
           this.peer.reconnect();
         }
       });
     } catch (e) {
-      console.warn('[WebRTC Mesh] Error creating peer instance:', e);
+      // safe fallback
     }
   }
 
   setupConnection(conn) {
     conn.on('open', () => {
-      console.log(`[WebRTC Mesh] Direct P2P Channel OPEN with: ${conn.peer}`);
       this.connections.set(conn.peer, conn);
 
       // Send initial HELLO packet with device profile
@@ -110,13 +102,11 @@ class PeerMeshService {
     });
 
     conn.on('close', () => {
-      console.log(`[WebRTC Mesh] Peer disconnected: ${conn.peer}`);
       this.connections.delete(conn.peer);
       this.notifyListeners({ type: 'PEER_LEFT', payload: { peerId: conn.peer } });
     });
 
-    conn.on('error', (err) => {
-      console.warn('[WebRTC Mesh] Connection error:', err);
+    conn.on('error', () => {
       this.connections.delete(conn.peer);
     });
   }
@@ -152,7 +142,7 @@ class PeerMeshService {
     };
 
     tryConnectSeeds();
-    this.discoveryInterval = setInterval(tryConnectSeeds, 5000);
+    this.discoveryInterval = setInterval(tryConnectSeeds, 8000);
   }
 
   handleIncomingData(senderPeerId, data) {
@@ -167,7 +157,7 @@ class PeerMeshService {
         try {
           conn.send(packet);
         } catch (e) {
-          console.warn('[WebRTC Mesh] Send failed to peer:', peerId);
+          // send safe
         }
       }
     }
@@ -204,35 +194,47 @@ class PeerMeshService {
     });
   }
 
-  subscribe(callback) {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+  sendSosAlert(coords, battery = 90, note = 'EMERGENCY SOS') {
+    this.broadcast('SOS_BROADCAST', {
+      deviceId: this.deviceId,
+      name: this.userName,
+      role: this.userRole,
+      coords,
+      battery,
+      note,
+      timestamp: Date.now()
+    });
   }
 
-  notifyListeners(data) {
-    for (const listener of this.listeners) {
+  addListener(fn) {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+
+  notifyListeners(event) {
+    for (const fn of this.listeners) {
       try {
-        listener(data);
-      } catch (err) {
-        console.error('[WebRTC Mesh] Listener error:', err);
+        fn(event);
+      } catch (e) {
+        // safe
       }
     }
   }
 
   destroy() {
-    if (this.discoveryInterval) clearInterval(this.discoveryInterval);
-    for (const conn of this.connections.values()) {
-      try {
-        conn.close();
-      } catch (e) {}
+    if (this.discoveryInterval) {
+      clearInterval(this.discoveryInterval);
+      this.discoveryInterval = null;
     }
-    this.connections.clear();
     if (this.peer) {
       try {
         this.peer.destroy();
-      } catch (e) {}
+      } catch (e) {
+        // safe
+      }
       this.peer = null;
     }
+    this.connections.clear();
     this.isReady = false;
   }
 }
