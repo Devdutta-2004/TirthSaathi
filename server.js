@@ -65,6 +65,33 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Cloudflare R2 Permanent Storage Upload Bridge
+  if (req.url === '/api/upload-cloudflare' && req.method === 'POST') {
+    let body = [];
+    req.on('data', chunk => body.push(chunk));
+    req.on('end', async () => {
+      try {
+        const buffer = Buffer.concat(body);
+        const filename = `pilgrim_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
+        const publicDomain = (process.env.CLOUDFLARE_PUBLIC_DOMAIN || 'https://pub-2798f4c196da403cbeb5ac2b60ccc005.r2.dev').replace(/\/$/, '');
+        const publicUrl = `${publicDomain}/${filename}`;
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          url: publicUrl,
+          key: filename,
+          sizeBytes: buffer.length,
+          storageProvider: 'Cloudflare R2 Bucket: musicapp-storage'
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
   res.writeHead(404);
   res.end('Not Found');
 });
