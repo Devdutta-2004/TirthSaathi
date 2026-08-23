@@ -73,18 +73,6 @@ export async function clearAllLocalMissingData() {
     localStorage.removeItem(STORAGE_KEYS.BENCHMARK_DEVOTEES);
     localStorage.removeItem(STORAGE_KEYS.HISTORICAL_CASES);
 
-    // Also clear remote Supabase if connected
-    if (SUPABASE_URL && SUPABASE_KEY) {
-      const baseUrl = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1`;
-      const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` };
-      await Promise.allSettled([
-        fetch(`${baseUrl}/biometric_vectors?case_id=neq.NULL`, { method: 'DELETE', headers }),
-        fetch(`${baseUrl}/citizen_sightings?id=neq.NULL`, { method: 'DELETE', headers }),
-        fetch(`${baseUrl}/ai_accuracy_logs?query_id=neq.NULL`, { method: 'DELETE', headers }),
-        fetch(`${baseUrl}/missing_persons?id=neq.NULL`, { method: 'DELETE', headers })
-      ]);
-    }
-
     notifyDbUpdate();
     return true;
   } catch (e) {
@@ -99,7 +87,6 @@ export async function clearAllLocalMissingData() {
 
 export function getMissingPersons() {
   const stored = readStorage(STORAGE_KEYS.MISSING_PERSONS, []);
-  // Clean out legacy sample IDs if present
   const cleaned = stored.filter((p) => !p.id.startsWith('TS-CASE-884') || p.isRealUserUpload);
   if (cleaned.length !== stored.length) {
     writeStorage(STORAGE_KEYS.MISSING_PERSONS, cleaned);
@@ -121,7 +108,7 @@ export function saveMissingPerson(person) {
     checkpoint: person.checkpoint || 'Main Gate Checkpoint',
     timeReported: 'Just now',
     status: person.status || 'searching',
-    statusLabel: person.statusLabel || 'Active Search Broadcast Sent',
+    statusLabel: person.statusLabel || 'Active Search in Progress',
     attire: person.attire || 'Traditional attire',
     contactPerson: person.contactPerson || 'Family Guardian',
     contactPhone: person.contactPhone || '+91 Emergency Contact',
@@ -144,19 +131,24 @@ export function saveMissingPerson(person) {
 
 export function updateMissingPersonStatus(caseId, status, statusLabel) {
   const current = getMissingPersons();
+  let updatedPerson = null;
   const updated = current.map((p) => {
     if (p.id === caseId) {
-      return {
+      updatedPerson = {
         ...p,
         status: status || p.status,
         statusLabel: statusLabel || p.statusLabel,
         sightingsCount: (p.sightingsCount || 0) + 1,
         updatedAt: new Date().toISOString()
       };
+      return updatedPerson;
     }
     return p;
   });
   writeStorage(STORAGE_KEYS.MISSING_PERSONS, updated);
+  if (updatedPerson) {
+    syncToSupabase('missing_persons', updatedPerson);
+  }
   notifyDbUpdate();
   return updated;
 }
@@ -290,6 +282,9 @@ export function updateAuditGroundTruth(queryId, groundTruthStatus, reviewerNotes
     return log;
   });
   writeStorage(STORAGE_KEYS.AI_AUDIT_LOGS, updated);
+  if (updatedLog) {
+    syncToSupabase('ai_accuracy_logs', updatedLog);
+  }
   notifyDbUpdate();
   return { updatedLogs: updated, updatedLog };
 }
@@ -457,51 +452,159 @@ export function exportGovernmentDocketJSON() {
 // 7. ASYNC SUPABASE REST SYNC & FETCH HELPER
 // ─────────────────────────────────────────────────────────────
 
+function mapMissingPersonToDb(p) {
+  return {
+    id: p.id,
+    name: p.name,
+    age: p.age ? Number(p.age) : null,
+    gender: p.gender || 'Male',
+    avatar: p.avatar || '👤',
+    image: p.image,
+    last_seen: p.lastSeen || p.last_seen || 'Temple Grounds',
+    last_seen_coords: p.lastSeenCoords || p.last_seen_coords || { lat: 25.3109, lng: 83.0107 },
+    checkpoint: p.checkpoint || 'Main Gate Checkpoint',
+    time_reported: p.timeReported || p.time_reported || 'Just now',
+    status: p.status || 'searching',
+    status_label: p.statusLabel || p.status_label || 'Active Search in Progress',
+    attire: p.attire || 'Traditional attire',
+    contact_person: p.contactPerson || p.contact_person || 'Family Guardian',
+    contact_phone: p.contactPhone || p.contact_phone || '+91 Emergency Contact',
+    languages: p.languages || 'Hindi',
+    medical_notes: p.medicalNotes || p.medical_notes || 'None',
+    sightings_count: p.sightingsCount || p.sightings_count || 0
+  };
+}
+
+function mapCitizenSightingToDb(s) {
+  return {
+    id: s.id,
+    matched_case_id: s.matchedCaseId || s.matched_case_id || null,
+    person_name: s.personName || s.person_name || 'Unidentified Devotee',
+    reported_by: s.reportedBy || s.reported_by || 'Kind Pilgrim',
+    reporter_phone: s.reporterPhone || s.reporter_phone || '+91 Sighting Report',
+    photo_url: s.photoUrl || s.photo_url || s.image || '',
+    location_name: s.locationName || s.location_name || 'Temple Grounds',
+    coords: s.coords || { lat: 25.3109, lng: 83.0107 },
+    condition_notes: s.conditionNotes || s.condition_notes || 'Safe with volunteers',
+    similarity_score: s.similarityScore || s.similarity_score || null,
+    euclidean_distance: s.euclideanDistance || s.euclidean_distance || null,
+    status: s.status || 'unclaimed'
+  };
+}
+
+function mapBiometricVectorToDb(v) {
+  return {
+    case_id: v.caseId || v.case_id,
+    vector: v.vector,
+    estimated_age: v.estimatedAge || v.estimated_age || null,
+    gender: v.gender || null,
+    landmark_count: v.landmarkCount || v.landmark_count || 68,
+    box: v.box || null
+  };
+}
+
+function mapAuditLogToDb(l) {
+  return {
+    query_id: l.queryId || l.query_id,
+    source_type: l.sourceType || l.source_type || 'citizen_upload',
+    detected_age: l.detectedAge || l.detected_age || null,
+    detected_gender: l.detectedGender || l.detected_gender || null,
+    gender_confidence: l.genderConfidence || l.gender_confidence || 0,
+    landmark_count: l.landmarkCount || l.landmark_count || 68,
+    matched_case_id: l.matchedCaseId || l.matched_case_id || null,
+    matched_name: l.matchedName || l.matched_name || null,
+    euclidean_distance: l.euclideanDistance || l.euclidean_distance || 0,
+    similarity_percent: l.similarityPercent || l.similarity_percent || 0,
+    is_match_found: Boolean(l.isMatchFound ?? l.is_match_found),
+    inference_time_ms: l.inferenceTimeMs || l.inference_time_ms || 120,
+    ground_truth_status: l.groundTruthStatus || l.ground_truth_status || 'unconfirmed',
+    reviewer_notes: l.reviewerNotes || l.reviewer_notes || ''
+  };
+}
+
 export async function fetchFromSupabase(tableName) {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
-  try {
-    const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}?select=*`;
-    const res = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
+  const serverUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:3001' : '';
+
+  // 1. Try Direct Supabase REST if key present
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}?select=*`;
+      const res = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      if (res.ok) {
+        return await res.json();
       }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data;
+    } catch (e) {
+      // Fallback
+    }
+  }
+
+  // 2. Proxy via Serverless API bridge
+  try {
+    const proxyRes = await fetch(`${serverUrl}/api/sync-database?table=${tableName}`);
+    if (proxyRes.ok) {
+      return await proxyRes.json();
     }
   } catch (err) {
-    console.warn(`[Supabase] Fetch error for ${tableName}:`, err.message);
+    console.warn(`[Supabase Proxy] Fetch notice for ${tableName}:`, err.message);
   }
+
   return null;
 }
 
 export async function syncToSupabase(tableName, record) {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return;
-  try {
-    const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}`;
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify(record)
-    });
-    if (res.ok) {
-      console.log(`[Supabase PostgreSQL] Record successfully synced to table: ${tableName}`);
+  let dbPayload = record;
+  if (tableName === 'missing_persons') dbPayload = mapMissingPersonToDb(record);
+  else if (tableName === 'citizen_sightings') dbPayload = mapCitizenSightingToDb(record);
+  else if (tableName === 'biometric_vectors') dbPayload = mapBiometricVectorToDb(record);
+  else if (tableName === 'ai_accuracy_logs') dbPayload = mapAuditLogToDb(record);
+
+  // 1. Try Direct Supabase REST if client key present
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(dbPayload)
+      });
+      if (res.ok) {
+        console.log(`[Supabase PostgreSQL] Direct synced: ${tableName}`);
+        return;
+      }
+    } catch (e) {
+      // Fallback to proxy
     }
+  }
+
+  // 2. Proxy via /api/sync-database Serverless API
+  try {
+    const serverUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:3001' : '';
+    await fetch(`${serverUrl}/api/sync-database`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        table: tableName,
+        data: dbPayload
+      })
+    });
+    console.log(`[Supabase PostgreSQL] Synced via Serverless API: ${tableName}`);
   } catch (err) {
-    console.warn(`[Supabase] Sync notice for ${tableName}:`, err.message);
+    console.warn(`[Supabase Proxy] Sync notice for ${tableName}:`, err.message);
   }
 }
 
 export async function syncAllFromSupabaseCloud() {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return;
   try {
     const remoteProfiles = await fetchFromSupabase('missing_persons');
     if (remoteProfiles && Array.isArray(remoteProfiles) && remoteProfiles.length > 0) {
@@ -517,7 +620,7 @@ export async function syncAllFromSupabaseCloud() {
         checkpoint: p.checkpoint || 'Main Gate Checkpoint',
         timeReported: p.time_reported || p.timeReported || 'Recently',
         status: p.status || 'searching',
-        statusLabel: p.status_label || p.statusLabel || 'Active Search in Progress',
+        statusLabel: p.status_label || p.status_label || 'Active Search in Progress',
         attire: p.attire || 'Traditional attire',
         contactPerson: p.contact_person || p.contactPerson || 'Family Guardian',
         contactPhone: p.contact_phone || p.contactPhone || '+91 Emergency Contact',
@@ -583,4 +686,3 @@ export async function syncAllFromSupabaseCloud() {
 if (typeof window !== 'undefined') {
   syncAllFromSupabaseCloud();
 }
-
