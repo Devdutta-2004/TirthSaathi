@@ -65,22 +65,33 @@ export const PunarMilanAIScreen = () => {
   const [modelsReady, setModelsReady] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Dynamic Benchmark Devotees (Updated on Verification)
+  // Live Data Lists (Synced across app)
+  const [missingPersonsList, setMissingPersonsList] = useState(getMissingPersons());
+  const [citizenSightingsList, setCitizenSightingsList] = useState(getCitizenSightings());
   const [benchmarkDevotees, setBenchmarkDevotees] = useState(getBenchmarkDevotees());
+  const [auditLogs, setAuditLogs] = useState(getAIAuditLogs());
 
   // Database search & filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Audit Logs & Accuracy Telemetry
-  const [auditLogs, setAuditLogs] = useState(getAIAuditLogs());
   const accuracyMetrics = useMemo(() => calculateAIAccuracyMetrics(), [auditLogs]);
 
-  // Pre-load ML neural network models
+  // Pre-load ML neural network models and listen for DB updates
   useEffect(() => {
     loadFaceModels()
       .then(() => setModelsReady(true))
       .catch((e) => console.warn('Model pre-load notice:', e.message));
+
+    const handleDbChange = () => {
+      setMissingPersonsList(getMissingPersons());
+      setCitizenSightingsList(getCitizenSightings());
+      setBenchmarkDevotees(getBenchmarkDevotees());
+      setAuditLogs(getAIAuditLogs());
+    };
+
+    window.addEventListener('tirthsaathi_db_updated', handleDbChange);
+    return () => window.removeEventListener('tirthsaathi_db_updated', handleDbChange);
   }, []);
 
   const handleFileUpload = (e) => {
@@ -195,17 +206,16 @@ export const PunarMilanAIScreen = () => {
 
   // Filtered Missing Profiles
   const missingProfiles = useMemo(() => {
-    const all = getMissingPersons();
-    return all.filter((p) => {
+    return missingPersonsList.filter((p) => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.lastSeen.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter, activeTab]);
+  }, [missingPersonsList, searchQuery, statusFilter]);
 
-  const citizenSightings = useMemo(() => getCitizenSightings(), [activeTab]);
+  const citizenSightings = citizenSightingsList;
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 animate-fadeIn">

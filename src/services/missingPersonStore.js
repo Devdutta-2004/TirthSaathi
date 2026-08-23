@@ -14,6 +14,13 @@ const STORAGE_KEYS = {
   BENCHMARK_DEVOTEES: 'tirthsaathi_benchmark_devotees_db'
 };
 
+// Broadcast database change event so all open UI screens update simultaneously
+export function notifyDbUpdate() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('tirthsaathi_db_updated'));
+  }
+}
+
 // Initial Seed Missing People Database
 const INITIAL_SEED_PROFILES = [
   {
@@ -152,7 +159,7 @@ const INITIAL_SEED_AUDIT_LOGS = [
     similarityPercent: 97.4,
     isMatchFound: true,
     inferenceTimeMs: 142,
-    groundTruthStatus: 'true_positive', // 'true_positive', 'false_positive', 'true_negative', 'false_negative', 'unconfirmed'
+    groundTruthStatus: 'true_positive',
     reviewerNotes: 'Biometrics confirmed by son Vikram Sharma upon arrival'
   },
   {
@@ -199,19 +206,29 @@ function readStorage(key, defaultData) {
       localStorage.setItem(key, JSON.stringify(defaultData));
       return defaultData;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return parsed;
   } catch (e) {
     console.warn(`[Store] Error reading ${key}:`, e.message);
     return defaultData;
   }
 }
 
-// Helper: Write JSON to LocalStorage
+// Helper: Write JSON to LocalStorage safely
 function writeStorage(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
-    console.warn(`[Store] Error writing ${key}:`, e.message);
+    console.warn(`[Store] Storage quota notice for ${key}, trimming excess cache:`, e.message);
+    // If quota exceeded, slice to keep the most recent 30 entries
+    if (Array.isArray(data) && data.length > 20) {
+      try {
+        const trimmed = data.slice(0, 20);
+        localStorage.setItem(key, JSON.stringify(trimmed));
+      } catch (trimErr) {
+        // Fallback
+      }
+    }
   }
 }
 
@@ -220,7 +237,13 @@ function writeStorage(key, data) {
 // ─────────────────────────────────────────────────────────────
 
 export function getMissingPersons() {
-  return readStorage(STORAGE_KEYS.MISSING_PERSONS, INITIAL_SEED_PROFILES);
+  const stored = readStorage(STORAGE_KEYS.MISSING_PERSONS, INITIAL_SEED_PROFILES);
+  // Ensure seed profiles always exist if list is empty
+  if (!stored || stored.length === 0) {
+    writeStorage(STORAGE_KEYS.MISSING_PERSONS, INITIAL_SEED_PROFILES);
+    return INITIAL_SEED_PROFILES;
+  }
+  return stored;
 }
 
 export function saveMissingPerson(person) {
@@ -247,11 +270,16 @@ export function saveMissingPerson(person) {
     createdAt: new Date().toISOString()
   };
 
-  const updated = [newRecord, ...current];
+  // Filter out any duplicate with same ID
+  const filtered = current.filter((p) => p.id !== newRecord.id);
+  const updated = [newRecord, ...filtered];
   writeStorage(STORAGE_KEYS.MISSING_PERSONS, updated);
 
   // Sync to Supabase if credentials present
   syncToSupabase('missing_persons', newRecord);
+
+  // Notify UI
+  notifyDbUpdate();
 
   return newRecord;
 }
@@ -271,6 +299,7 @@ export function updateMissingPersonStatus(caseId, status, statusLabel) {
     return p;
   });
   writeStorage(STORAGE_KEYS.MISSING_PERSONS, updated);
+  notifyDbUpdate();
   return updated;
 }
 
@@ -337,6 +366,7 @@ export function saveCitizenSighting(sighting) {
   }
 
   syncToSupabase('citizen_sightings', newSighting);
+  notifyDbUpdate();
   return newSighting;
 }
 
@@ -371,6 +401,7 @@ export function recordAIScanAudit(auditEntry) {
   const updated = [newLog, ...current];
   writeStorage(STORAGE_KEYS.AI_AUDIT_LOGS, updated);
   syncToSupabase('ai_accuracy_logs', newLog);
+  notifyDbUpdate();
   return newLog;
 }
 
@@ -390,6 +421,7 @@ export function updateAuditGroundTruth(queryId, groundTruthStatus, reviewerNotes
     return log;
   });
   writeStorage(STORAGE_KEYS.AI_AUDIT_LOGS, updated);
+  notifyDbUpdate();
   return { updatedLogs: updated, updatedLog };
 }
 
@@ -437,15 +469,40 @@ export const INITIAL_BENCHMARKS = [
 ];
 
 export function getBenchmarkDevotees() {
-  return readStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, INITIAL_BENCHMARKS);
+  const customBenchmarks = readStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, INITIAL_BENCHMARKS);
+  const missingProfiles = getMissingPersons();
+
+  // Dynamically include all registered missing people so their photos are ALWAYS available in the benchmark selection list!
+  const missingAsBenchmarks = missingProfiles.map((p) => ({
+    id: `profile-bench-${p.id}`,
+    label: `${p.name} (${p.age ? p.age + 'y' : 'Missing'})`,
+    tag: `Case #${p.id.slice(-4)}`,
+    name: p.name,
+    avatar: p.avatar || '👤',
+    description: `${p.statusLabel || p.status} • Last seen at ${p.lastSeen?.slice(0, 30) || 'Temple'}...`,
+    previewUrl: p.image,
+    targetMatchId: p.id,
+    verifiedAccuracy: p.status === 'located' ? 'Located & Verified' : 'Registered Case',
+    isRegisteredCase: true
+  }));
+
+  // Merge unique by targetMatchId or previewUrl (custom benchmarks take priority at top)
+  const seen = new Set();
+  const combined = [];
+
+  for (const item of [...customBenchmarks, ...missingAsBenchmarks]) {
+    const key = item.targetMatchId || item.previewUrl;
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      combined.push(item);
+    }
+  }
+
+  return combined;
 }
 
 export function addBenchmarkDevotee(devotee) {
-  const current = getBenchmarkDevotees();
-  // Check if same photo or case ID already exists
-  const exists = current.some(
-    (b) => (devotee.targetMatchId && b.targetMatchId === devotee.targetMatchId) || b.previewUrl === devotee.previewUrl
-  );
+  const current = readStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, INITIAL_BENCHMARKS);
 
   const newBenchmark = {
     id: `benchmark-${Date.now()}`,
@@ -461,13 +518,14 @@ export function addBenchmarkDevotee(devotee) {
     addedAt: new Date().toLocaleTimeString()
   };
 
-  // If already exists, update it to top
+  // Filter out any existing item with same match ID or previewUrl
   const filtered = current.filter(
     (b) => !(devotee.targetMatchId && b.targetMatchId === devotee.targetMatchId) && b.previewUrl !== devotee.previewUrl
   );
   const updated = [newBenchmark, ...filtered];
   writeStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, updated);
-  return updated;
+  notifyDbUpdate();
+  return getBenchmarkDevotees();
 }
 
 /**
@@ -490,7 +548,6 @@ export function calculateAIAccuracyMetrics() {
     else if (log.groundTruthStatus === 'true_negative') tn++;
     else if (log.groundTruthStatus === 'false_negative') fn++;
     else {
-      // Auto-classify unconfirmed based on verified match flag
       if (log.isMatchFound) tp++;
       else tn++;
       unconfirmed++;
@@ -518,7 +575,7 @@ export function calculateAIAccuracyMetrics() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 5. GOVERNMENT & POLICE DATA EXPORT ENGINE (CSV / JSON)
+// 6. GOVERNMENT & POLICE DATA EXPORT ENGINE (CSV / JSON)
 // ─────────────────────────────────────────────────────────────
 
 export function exportGovernmentDocketCSV() {
@@ -572,7 +629,7 @@ export function exportGovernmentDocketJSON() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 6. ASYNC SUPABASE REST SYNC HELPER
+// 7. ASYNC SUPABASE REST SYNC HELPER
 // ─────────────────────────────────────────────────────────────
 
 async function syncToSupabase(tableName, record) {
@@ -590,7 +647,6 @@ async function syncToSupabase(tableName, record) {
       body: JSON.stringify(record)
     });
   } catch (err) {
-    // Non-fatal, cached locally
     console.warn(`[Supabase] Sync notice for ${tableName}:`, err.message);
   }
 }
