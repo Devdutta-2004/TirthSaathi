@@ -41,7 +41,7 @@ export const vaishnoDeviHistoricalMonthly = [
   { year: 2017, months: [454118, 328230, 684663, 800813, 910843, 1184898, 781433, 631645, 735596, 694130, 449174, 522775], total: 8178318 },
   { year: 2018, months: [545945, 343162, 796852, 728666, 944614, 1161329, 748713, 690646, 680373, 799596, 603160, 543485], total: 8586541 },
   { year: 2019, months: [501880, 269739, 462369, 690893, 807125, 1159715, 845071, 602088, 656167, 796087, 577757, 571173], total: 7940064 },
-  { year: 2020, months: [512569, 396683, 343482, 0, 0, 0, 0, 7253, 27427, 121661, 103749, 207533], total: 1720357 }, // COVID Lockdown Period
+  { year: 2020, months: [512569, 396683, 343482, 0, 0, 0, 0, 7253, 27427, 121661, 103749, 207533], total: 1720357 },
   { year: 2021, months: [408041, 389549, 525198, 321735, 45155, 198490, 500671, 521970, 639162, 753561, 656415, 638207], total: 5588176 },
   { year: 2022, months: [438521, 361074, 778669, 902192, 986766, 1129231, 907542, 877762, 820282, 751404, 601565, 561832], total: 9124970 },
   { year: 2023, months: [524189, 414432, 894650, 1018540, 995773, 1195844, 776800, 710914, 794156, 915703, 618646, 662578], total: 9522225 },
@@ -56,26 +56,402 @@ export const MONTH_NAMES = [
 
 /**
  * 24-Hour Diurnal Pilgrim Influx Distribution Curve (% of daily footfall per hour)
- * Reflects peak early morning Aarti (5-8 AM), mid-day peak (10 AM-1 PM), and evening Aarti (6-8 PM)
  */
 export const DIURNAL_HOURLY_PERCENTAGES = [
-  0.012, 0.008, 0.006, 0.010, 0.028, 0.065, // 00:00 - 05:00 (Early Dawn Aarti Preparation)
-  0.088, 0.092, 0.085, 0.078, 0.075, 0.070, // 06:00 - 11:00 (Morning Peak Darshan Window)
-  0.062, 0.048, 0.042, 0.045, 0.058, 0.074, // 12:00 - 17:00 (Afternoon Transition & Trek)
-  0.082, 0.068, 0.042, 0.024, 0.015, 0.012  // 18:00 - 23:00 (Evening Shringaar Aarti & Night Flow)
+  0.012, 0.008, 0.006, 0.010, 0.028, 0.065, // 00:00 - 05:00
+  0.088, 0.092, 0.085, 0.078, 0.075, 0.070, // 06:00 - 11:00
+  0.062, 0.048, 0.042, 0.045, 0.058, 0.074, // 12:00 - 17:00
+  0.082, 0.068, 0.042, 0.024, 0.015, 0.012  // 18:00 - 23:00
 ];
 
 /**
- * Multi-Shrine Metadata & Operational Configurations
+ * Multi-Shrine Registry (All Key Pilgrimages including Gujarat, UP, UK, J&K, MP, AP)
  */
 export const SHRINE_REGISTRY = {
+  somnath: {
+    id: 'somnath',
+    name: 'Shree Somnath Jyotirlinga Temple',
+    location: 'Prabhas Patan, Veraval, Gujarat',
+    state: 'Gujarat',
+    tag: 'First Jyotirlinga',
+    image: 'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?auto=format&fit=crop&w=1400&q=80',
+    description: 'First among the twelve sacred Aadi Jyotirlingas, perched grandly on the Arabian Sea coastline in Saurashtra.',
+    dailyCapacity: 60000,
+    currentDailyExpected: 42000,
+    historicalTotalAnnual: 8500000,
+    gates: [
+      {
+        id: 'som-gate-1',
+        code: 'Digvijay Dwar (Gate 1)',
+        name: 'Main Sea-Facing Grand Entrance',
+        description: 'Primary security checkpoint with RFID turnstiles and Arabian Sea promenade queue',
+        capacity: 1200,
+        currentCount: 480,
+        status: 'OPEN',
+        baseWaitPer100: 3.2,
+        distanceMeters: 250,
+        trend: 'stable',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'som-gate-2',
+        code: 'Sardar Vallabhbhai Gate (Gate 2)',
+        name: 'VIP & Senior Citizen Corridor',
+        description: 'Shaded ramp corridor directly accessible from parking and battery buggy terminal',
+        capacity: 800,
+        currentCount: 190,
+        status: 'OPEN',
+        baseWaitPer100: 2.1,
+        distanceMeters: 180,
+        trend: 'falling',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: false
+      },
+      {
+        id: 'som-gate-3',
+        code: 'Triveni Sangam Gate (Gate 3)',
+        name: 'River Confluence Approach',
+        description: 'Scenic pedestrian entrance from Triveni Sangam Ghat',
+        capacity: 900,
+        currentCount: 350,
+        status: 'OPEN',
+        baseWaitPer100: 3.5,
+        distanceMeters: 450,
+        trend: 'stable',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: true
+      }
+    ]
+  },
+  dwarka: {
+    id: 'dwarka',
+    name: 'Dwarkadhish Temple (Jagat Mandir)',
+    location: 'Dwarka, Devbhumi Dwarka, Gujarat',
+    state: 'Gujarat',
+    tag: 'Char Dham',
+    image: 'https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=1400&q=80',
+    description: 'Ancient 5-storey Chalukya-style Jagat Mandir dedicated to Lord Krishna, one of the 4 sacred Char Dhams.',
+    dailyCapacity: 50000,
+    currentDailyExpected: 36000,
+    historicalTotalAnnual: 6800000,
+    gates: [
+      {
+        id: 'dwk-gate-1',
+        code: 'Moksha Dwar (Gate 1)',
+        name: 'Main Northern City Gate',
+        description: 'Primary entrance facing Dwarka bazaar with luggage counters and shoe stalls',
+        capacity: 1100,
+        currentCount: 780,
+        status: 'OPEN',
+        baseWaitPer100: 4.5,
+        distanceMeters: 200,
+        trend: 'rising',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'dwk-gate-2',
+        code: 'Swarga Dwar (Gate 2)',
+        name: 'Gomti River 56-Steps Gateway',
+        description: 'South gate with 56 sacred steps leading down to Gomti River Ghat and Sudama Setu',
+        capacity: 1000,
+        currentCount: 340,
+        status: 'OPEN',
+        baseWaitPer100: 3.0,
+        distanceMeters: 350,
+        trend: 'falling',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'dwk-gate-3',
+        code: 'Kalyan Dwar (Gate 3)',
+        name: 'Senior & Token Pass Entry',
+        description: 'Special slotted token pass lane with wheelchair ramps and direct sanctum access',
+        capacity: 600,
+        currentCount: 160,
+        status: 'OPEN',
+        baseWaitPer100: 2.0,
+        distanceMeters: 150,
+        trend: 'falling',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: false
+      }
+    ]
+  },
+  ayodhya: {
+    id: 'ayodhya',
+    name: 'Shree Ram Janmabhoomi Mandir',
+    location: 'Ayodhya, Uttar Pradesh',
+    state: 'Uttar Pradesh',
+    tag: 'Ram Janmabhoomi',
+    image: 'https://images.unsplash.com/photo-1590077428593-a55bb07c4665?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1590077428593-a55bb07c4665?auto=format&fit=crop&w=1400&q=80',
+    description: 'Grand Nagara-style Ram Mandir complex equipped with multi-tiered queue corridors and automated turnstile scanners.',
+    dailyCapacity: 120000,
+    currentDailyExpected: 78000,
+    historicalTotalAnnual: 11200000,
+    gates: [
+      {
+        id: 'gate-ram-a',
+        code: 'Sugriva Qila Gate (Gate 1)',
+        name: 'Rampath North Boulevard',
+        description: 'Main pedestrian boulevard with battery buggy shuttle transit and RFID turnstiles',
+        capacity: 1400,
+        currentCount: 880,
+        status: 'OPEN',
+        baseWaitPer100: 4.0,
+        distanceMeters: 500,
+        trend: 'stable',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'gate-ram-b',
+        code: 'Bhakti Path Gate (Gate 2)',
+        name: 'Bhakti Path West Corridor',
+        description: 'Express pilgrimage track with continuous shaded queue canopies and water misting',
+        capacity: 1200,
+        currentCount: 390,
+        status: 'OPEN',
+        baseWaitPer100: 2.8,
+        distanceMeters: 420,
+        trend: 'falling',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'gate-ram-c',
+        code: 'Janmabhoomi Path (Gate 3)',
+        name: 'Pilgrim Facility Center (PFC)',
+        description: 'Access from central locker facility, luggage scanner and VIP Token Pass Entry',
+        capacity: 1000,
+        currentCount: 720,
+        status: 'OPEN',
+        baseWaitPer100: 5.0,
+        distanceMeters: 300,
+        trend: 'rising',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: false
+      },
+      {
+        id: 'gate-ram-d',
+        code: 'Ram Ki Paidi Gate (Gate 4)',
+        name: 'Saryu River Approach Corridor',
+        description: 'Direct foot access from holy Saryu Ghat snan points',
+        capacity: 800,
+        currentCount: 260,
+        status: 'OPEN',
+        baseWaitPer100: 3.2,
+        distanceMeters: 850,
+        trend: 'falling',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: false
+      }
+    ]
+  },
+  kedarnath: {
+    id: 'kedarnath',
+    name: 'Kedarnath Dham',
+    location: 'Rudraprayag, Uttarakhand',
+    state: 'Uttarakhand',
+    tag: 'Himalayan Jyotirlinga',
+    image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1400&q=80',
+    description: 'Highest of the 12 Jyotirlingas, situated at 3,583m altitude amidst the snow-clad Garhwal Himalayas.',
+    dailyCapacity: 25000,
+    currentDailyExpected: 18000,
+    historicalTotalAnnual: 1960000,
+    gates: [
+      {
+        id: 'kdr-gate-1',
+        code: 'Mandir Plaza (Gate 1)',
+        name: 'Main Mandakini Front Courtyard',
+        description: 'General darshan line with thermal queue barriers and direct temple sanctum entry',
+        capacity: 900,
+        currentCount: 650,
+        status: 'OPEN',
+        baseWaitPer100: 4.8,
+        distanceMeters: 150,
+        trend: 'rising',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'kdr-gate-2',
+        code: 'Helipad Fast-Track (Gate 2)',
+        name: 'Sanjivani Helipad Corridor',
+        description: 'Dedicated queue corridor for helicopter arrivals, elderly yatris, and token passes',
+        capacity: 500,
+        currentCount: 140,
+        status: 'OPEN',
+        baseWaitPer100: 2.2,
+        distanceMeters: 300,
+        trend: 'falling',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: false
+      },
+      {
+        id: 'kdr-gate-3',
+        code: 'Bhairavnath Path (Gate 3)',
+        name: 'Upper Mountain Trek Approach',
+        description: 'Footpath approach for pilgrims descending from Bhairavnath Temple',
+        capacity: 600,
+        currentCount: 220,
+        status: 'OPEN',
+        baseWaitPer100: 3.0,
+        distanceMeters: 550,
+        trend: 'stable',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: false
+      }
+    ]
+  },
+  ambaji: {
+    id: 'ambaji',
+    name: 'Shree Ambaji Mata Mandir',
+    location: 'Banaskantha, Gujarat',
+    state: 'Gujarat',
+    tag: '51 Shakti Peeth',
+    image: 'https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=1400&q=80',
+    description: 'Major Shakti Peeth atop Arasur Hills where the sacred Visoyantra is worshipped with golden spire (Kalash).',
+    dailyCapacity: 70000,
+    currentDailyExpected: 45000,
+    historicalTotalAnnual: 9200000,
+    gates: [
+      {
+        id: 'amb-gate-1',
+        code: 'Shakti Dwar (Gate 1)',
+        name: 'Central Bazaar Grand Entrance',
+        description: 'Main pedestrian entrance with covered parikrama walkway and shoe lockers',
+        capacity: 1200,
+        currentCount: 710,
+        status: 'OPEN',
+        baseWaitPer100: 3.8,
+        distanceMeters: 200,
+        trend: 'rising',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'amb-gate-2',
+        code: 'Gabbar Hill Corridor (Gate 2)',
+        name: 'Gabbar Ropeway Express Lane',
+        description: 'Direct transit gate from Gabbar Hill 999-steps ropeway terminal',
+        capacity: 900,
+        currentCount: 280,
+        status: 'OPEN',
+        baseWaitPer100: 2.5,
+        distanceMeters: 400,
+        trend: 'falling',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: false
+      },
+      {
+        id: 'amb-gate-3',
+        code: 'Mansarovar Dwar (Gate 3)',
+        name: 'Holy Kund Approach Gate',
+        description: 'Western corridor connecting from Mansarovar holy tank',
+        capacity: 800,
+        currentCount: 310,
+        status: 'OPEN',
+        baseWaitPer100: 3.2,
+        distanceMeters: 350,
+        trend: 'stable',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: true
+      }
+    ]
+  },
+  pavagadh: {
+    id: 'pavagadh',
+    name: 'Kalika Mata Temple (Pavagadh)',
+    location: 'Panchmahal, Champaner, Gujarat',
+    state: 'Gujarat',
+    tag: 'Hilltop Shakti Peeth',
+    image: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1400&q=80',
+    description: 'Renowned hilltop Shakti Peeth atop the ancient UNESCO World Heritage Champaner-Pavagadh volcanic hill.',
+    dailyCapacity: 65000,
+    currentDailyExpected: 38000,
+    historicalTotalAnnual: 8100000,
+    gates: [
+      {
+        id: 'pvg-gate-1',
+        code: 'Udan Khatola Gate (Gate 1)',
+        name: 'Ropeway Summit Terminal Gate',
+        description: 'Direct entry from the high-capacity cable car ropeway terminal at Machi',
+        capacity: 1100,
+        currentCount: 420,
+        status: 'OPEN',
+        baseWaitPer100: 2.9,
+        distanceMeters: 180,
+        trend: 'falling',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'pvg-gate-2',
+        code: 'Machi Pagathiya Gate (Gate 2)',
+        name: 'Traditional 2000-Steps Pathway',
+        description: 'Traditional pedestrian staircase route through historic Seven Gates (Satwan Darwaja)',
+        capacity: 1000,
+        currentCount: 680,
+        status: 'OPEN',
+        baseWaitPer100: 4.2,
+        distanceMeters: 650,
+        trend: 'rising',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'pvg-gate-3',
+        code: 'Mahakali Shikhar Gate (Gate 3)',
+        name: 'Upper Sanctum Shringaar Line',
+        description: 'Final corridor to newly renovated gold-plated Shikhar sanctum sanctorum',
+        capacity: 700,
+        currentCount: 230,
+        status: 'OPEN',
+        baseWaitPer100: 2.4,
+        distanceMeters: 120,
+        trend: 'stable',
+        elderlyFriendly: true,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: false
+      }
+    ]
+  },
   vaishno_devi: {
     id: 'vaishno_devi',
     name: 'Shri Mata Vaishno Devi Shrine',
     location: 'Katra, Reasi, Jammu & Kashmir',
     state: 'Jammu & Kashmir',
-    image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
-    description: 'Sacred Trikuta Mountain Cave Shrine. Features Banganga, Tarakote Marg, Sanjichhat, and Bhawan gates.',
+    tag: 'Holy Cave Shrine',
+    image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1400&q=80',
+    description: 'Sacred Trikuta Mountain Cave Shrine with multi-tier track monitoring and RFID yatra card registration.',
     dailyCapacity: 50000,
     currentDailyExpected: 38500,
     historicalTotalAnnual: 9484182,
@@ -83,7 +459,7 @@ export const SHRINE_REGISTRY = {
       {
         id: 'vd-gate-1',
         code: 'Banganga Gate (Gate 1)',
-        name: 'Traditional Banganga Entry Checkpoint',
+        name: 'Traditional Banganga Checkpoint',
         description: 'Main traditional entry point with RFID scanner turnstiles and pony transit',
         capacity: 1400,
         currentCount: 1120,
@@ -98,7 +474,7 @@ export const SHRINE_REGISTRY = {
       {
         id: 'vd-gate-2',
         code: 'Tarakote Marg (Gate 2)',
-        name: 'Modern Eco-Friendly Scenic Corridor',
+        name: 'Eco-Friendly Scenic Corridor',
         description: 'Wide gradient pedestrian corridor with automated mist shelters & emergency e-rickshaws',
         capacity: 1200,
         currentCount: 380,
@@ -147,7 +523,9 @@ export const SHRINE_REGISTRY = {
     name: 'Kashi Vishwanath Temple',
     location: 'Varanasi, Uttar Pradesh',
     state: 'Uttar Pradesh',
-    image: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=800&q=80',
+    tag: 'Ganga Corridor Jyotirlinga',
+    image: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1400&q=80',
     description: 'Ancient sacred temple along the holy Ganga River with 4 primary pedestrian corridors.',
     dailyCapacity: 80000,
     currentDailyExpected: 52000,
@@ -215,85 +593,14 @@ export const SHRINE_REGISTRY = {
       }
     ]
   },
-  ayodhya: {
-    id: 'ayodhya',
-    name: 'Shree Ram Janmabhoomi Mandir',
-    location: 'Ayodhya, Uttar Pradesh',
-    state: 'Uttar Pradesh',
-    image: 'https://images.unsplash.com/photo-1590077428593-a55bb07c4665?auto=format&fit=crop&w=800&q=80',
-    description: 'Grand Ram Mandir complex equipped with 4 entry pathways and automated crowd control barriers.',
-    dailyCapacity: 120000,
-    currentDailyExpected: 78000,
-    historicalTotalAnnual: 11200000,
-    gates: [
-      {
-        id: 'gate-ram-a',
-        code: 'Sugriva Qila Gate',
-        name: 'Rampath North Gate (Gate 1)',
-        description: 'Main pedestrian boulevard with battery buggy shuttle transit',
-        capacity: 1200,
-        currentCount: 780,
-        status: 'OPEN',
-        baseWaitPer100: 4.0,
-        distanceMeters: 500,
-        trend: 'stable',
-        elderlyFriendly: true,
-        wheelchairAccessible: true,
-        recommendedForLargeGroups: true
-      },
-      {
-        id: 'gate-ram-b',
-        code: 'Bhakti Path Gate',
-        name: 'Bhakti Path West Gate (Gate 2)',
-        description: 'Express pilgrimage track with continuous shaded queue canopies',
-        capacity: 1200,
-        currentCount: 390,
-        status: 'OPEN',
-        baseWaitPer100: 3.0,
-        distanceMeters: 420,
-        trend: 'falling',
-        elderlyFriendly: true,
-        wheelchairAccessible: true,
-        recommendedForLargeGroups: true
-      },
-      {
-        id: 'gate-ram-c',
-        code: 'Janmabhoomi Path',
-        name: 'Main Pilgrim Facility Center (Gate 3)',
-        description: 'Access from Luggage Counter and VIP Token Pass Entry',
-        capacity: 1000,
-        currentCount: 880,
-        status: 'OPEN',
-        baseWaitPer100: 5.2,
-        distanceMeters: 300,
-        trend: 'rising',
-        elderlyFriendly: false,
-        wheelchairAccessible: false,
-        recommendedForLargeGroups: false
-      },
-      {
-        id: 'gate-ram-d',
-        code: 'Ram Ki Paidi Gate',
-        name: 'Saryu River Approach (Gate 4)',
-        description: 'Direct foot access from Saryu Ghat Snan ghats',
-        capacity: 800,
-        currentCount: 290,
-        status: 'OPEN',
-        baseWaitPer100: 3.5,
-        distanceMeters: 850,
-        trend: 'falling',
-        elderlyFriendly: false,
-        wheelchairAccessible: false,
-        recommendedForLargeGroups: false
-      }
-    ]
-  },
   tirupati: {
     id: 'tirupati',
     name: 'Tirumala Tirupati Devasthanams (TTD)',
     location: 'Tirupati, Andhra Pradesh',
     state: 'Andhra Pradesh',
-    image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=800&q=80',
+    tag: 'Seven Hills',
+    image: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1400&q=80',
     description: 'World renowned Venkateswara Temple featuring the historic Vaikuntam Queue Complex.',
     dailyCapacity: 90000,
     currentDailyExpected: 68000,
@@ -302,7 +609,7 @@ export const SHRINE_REGISTRY = {
       {
         id: 'gate-vqc-1',
         code: 'Vaikuntam QC-1',
-        name: 'Vaikuntam Queue Complex Compartment 1',
+        name: 'Vaikuntam Compartment 1',
         description: 'General Slotted Sarva Darshan (SSD) token lines',
         capacity: 1500,
         currentCount: 1290,
@@ -317,7 +624,7 @@ export const SHRINE_REGISTRY = {
       {
         id: 'gate-vqc-2',
         code: 'Vaikuntam QC-2',
-        name: 'Vaikuntam Special Entry Darshan (SED)',
+        name: 'Special Entry Darshan (SED)',
         description: 'Online Pre-booked INR 300 Token Pass Priority Lane',
         capacity: 1500,
         currentCount: 420,
@@ -332,8 +639,8 @@ export const SHRINE_REGISTRY = {
       {
         id: 'gate-supatham',
         code: 'Supatham Gate',
-        name: 'Privileged Entry (Senior & Infant Lane)',
-        description: 'Direct entry for pilgrims aged 65+, infants under 1 year, and physically challenged',
+        name: 'Privileged Entry (Senior/Infant)',
+        description: 'Direct entry for pilgrims aged 65+, infants under 1 year, and differently abled',
         capacity: 800,
         currentCount: 190,
         status: 'OPEN',
@@ -358,6 +665,66 @@ export const SHRINE_REGISTRY = {
         elderlyFriendly: false,
         wheelchairAccessible: false,
         recommendedForLargeGroups: false
+      }
+    ]
+  },
+  mahakal: {
+    id: 'mahakal',
+    name: 'Shree Mahakaleshwar Jyotirlinga',
+    location: 'Ujjain, Madhya Pradesh',
+    state: 'Madhya Pradesh',
+    tag: 'Bhasma Aarti Dham',
+    image: 'https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=1200&q=80',
+    threeDImage: 'https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=1400&q=80',
+    description: 'Dakshinmukhi Jyotirlinga on the banks of River Shipra featuring the 900m grand Mahakal Lok Corridor.',
+    dailyCapacity: 85000,
+    currentDailyExpected: 58000,
+    historicalTotalAnnual: 9800000,
+    gates: [
+      {
+        id: 'mhk-gate-1',
+        code: 'Mahakal Lok Gate (Gate 1)',
+        name: 'Grand Mahakal Lok Corridor Entrance',
+        description: 'Wide pedestrian corridor with automated mist shelter and electric cart mobility',
+        capacity: 1300,
+        currentCount: 460,
+        status: 'OPEN',
+        baseWaitPer100: 3.1,
+        distanceMeters: 350,
+        trend: 'falling',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: true
+      },
+      {
+        id: 'mhk-gate-2',
+        code: 'Bhasma Aarti Gate (Gate 2)',
+        name: 'Special Slotted Token Pass Entry',
+        description: 'Pre-registered Bhasma Aarti and online VIP token lane directly to Nandi Hall',
+        capacity: 800,
+        currentCount: 220,
+        status: 'OPEN',
+        baseWaitPer100: 2.2,
+        distanceMeters: 200,
+        trend: 'stable',
+        elderlyFriendly: true,
+        wheelchairAccessible: true,
+        recommendedForLargeGroups: false
+      },
+      {
+        id: 'mhk-gate-3',
+        code: 'Nandi Dwar (Gate 3)',
+        name: 'Traditional Kotitirth Kund Gate',
+        description: 'Approach from historic Kotitirth Kund and ancient temple parikrama',
+        capacity: 900,
+        currentCount: 710,
+        status: 'OPEN',
+        baseWaitPer100: 4.6,
+        distanceMeters: 450,
+        trend: 'rising',
+        elderlyFriendly: false,
+        wheelchairAccessible: false,
+        recommendedForLargeGroups: true
       }
     ]
   }
