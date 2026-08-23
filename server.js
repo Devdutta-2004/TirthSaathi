@@ -116,6 +116,43 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Supabase Database Proxy Endpoint
+  if (req.url.startsWith('/api/sync-database') && req.method === 'POST') {
+    let body = [];
+    req.on('data', chunk => body.push(chunk));
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(Buffer.concat(body).toString());
+        const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gyfhkmdzfpknlefwvxes.supabase.co';
+        const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+        if (!supabaseKey) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing SUPABASE_KEY in environment' }));
+          return;
+        }
+        const endpoint = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/${payload.table}`;
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify(payload.data)
+        });
+
+        res.writeHead(response.status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: response.ok }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   // Cloudflare R2 Image Proxy / Streaming Endpoint
   if (req.url.startsWith('/api/image') && req.method === 'GET') {
     try {
