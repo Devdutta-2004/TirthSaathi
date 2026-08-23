@@ -36,6 +36,19 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      if (action === 'delete') {
+        const { filterColumn, filterValue } = req.body || {};
+        const endpoint = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/${tableName}?${filterColumn || 'id'}=eq.${filterValue}`;
+        const response = await fetch(endpoint, {
+          method: 'DELETE',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`
+          }
+        });
+        return res.status(response.status).json({ success: response.ok });
+      }
+
       const endpoint = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/${tableName}`;
       const response = await fetch(endpoint, {
         method: 'POST',

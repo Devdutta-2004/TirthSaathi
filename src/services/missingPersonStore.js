@@ -129,6 +129,29 @@ export function saveMissingPerson(person) {
   return newRecord;
 }
 
+export function deleteMissingPerson(caseId) {
+  const current = getMissingPersons();
+  const updated = current.filter((p) => p.id !== caseId);
+  writeStorage(STORAGE_KEYS.MISSING_PERSONS, updated);
+
+  // Also remove biometric vector
+  const vectors = getStoredBiometricVectors();
+  if (vectors[caseId]) {
+    delete vectors[caseId];
+    writeStorage(STORAGE_KEYS.BIOMETRIC_VECTORS, vectors);
+    deleteFromSupabase('biometric_vectors', 'case_id', caseId);
+  }
+
+  // Also remove from custom benchmarks
+  const benchmarks = readStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, []);
+  const updatedBenchmarks = benchmarks.filter((b) => b.targetMatchId !== caseId);
+  writeStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, updatedBenchmarks);
+
+  deleteFromSupabase('missing_persons', 'id', caseId);
+  notifyDbUpdate();
+  return updated;
+}
+
 export function updateMissingPersonStatus(caseId, status, statusLabel) {
   const current = getMissingPersons();
   let updatedPerson = null;
@@ -223,6 +246,59 @@ export function saveCitizenSighting(sighting) {
   syncToSupabase('citizen_sightings', newSighting);
   notifyDbUpdate();
   return newSighting;
+}
+
+export function deleteCitizenSighting(sightingId) {
+  const current = getCitizenSightings();
+  const updated = current.filter((s) => s.id !== sightingId);
+  writeStorage(STORAGE_KEYS.CITIZEN_SIGHTINGS, updated);
+  deleteFromSupabase('citizen_sightings', 'id', sightingId);
+  notifyDbUpdate();
+  return updated;
+}
+
+export function deleteBenchmarkDevotee(benchmarkId) {
+  const current = readStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, []);
+  const updated = current.filter((b) => b.id !== benchmarkId);
+  writeStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, updated);
+  notifyDbUpdate();
+  return getBenchmarkDevotees();
+}
+
+export async function deleteFromSupabase(tableName, filterColumn, filterValue) {
+  // 1. Direct Supabase REST if client key present
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}?${filterColumn}=eq.${filterValue}`;
+      await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      return;
+    } catch (e) {
+      // Fallback
+    }
+  }
+
+  // 2. Proxy via /api/sync-database
+  try {
+    const serverUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:3001' : '';
+    await fetch(`${serverUrl}/api/sync-database`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        table: tableName,
+        action: 'delete',
+        filterColumn,
+        filterValue
+      })
+    });
+  } catch (err) {
+    console.warn(`[Supabase Delete Proxy] Notice:`, err.message);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
