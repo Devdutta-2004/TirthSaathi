@@ -7,6 +7,7 @@ import { realtimeClient } from '../services/realtimeClient';
 import { peerMeshService } from '../services/peerService';
 import { watchDeviceGPS, stopWatchingGPS, getDeviceBattery, playSpiritualChimeBeacon } from '../services/geoService';
 import { sampleLostReports } from '../data/lostFound';
+import { getMissingPersons, saveMissingPerson } from '../services/missingPersonStore';
 
 const YatraContext = createContext();
 
@@ -44,30 +45,23 @@ export const YatraProvider = ({ children }) => {
   const [passes, setPasses] = useState(getStoredPasses());
 
   // 8. Lost & Found / PunarMilan AI Database
-  const [lostReports, setLostReports] = useState(sampleLostReports);
+  const [lostReports, setLostReports] = useState(getMissingPersons());
 
   const addLostReport = (report) => {
-    const newReport = {
-      id: `TS-LF-${Math.floor(1000 + Math.random() * 9000)}`,
-      type: 'person',
+    const saved = saveMissingPerson({
       name: report.name,
-      age: report.age || 'Unspecified',
+      age: report.age ? Number(report.age) : 40,
       gender: report.gender || 'Male',
-      avatar: report.gender === 'Female' ? '👵' : report.gender === 'Child' ? '👦' : '👨',
-      status: 'Active Search in Progress',
-      statusCode: 'searching',
-      lastSeen: report.lastSeen,
-      time: 'Just now',
-      wearing: report.wearing || 'Traditional attire',
+      lastSeen: report.lastSeen || 'Temple Perimeter',
+      attire: report.wearing || 'Traditional attire',
       languages: report.languages || 'Hindi',
-      matchedBooth: 'Broadcast sent to Temple Police & Volunteers',
       contactPerson: report.contactPerson || 'Family Member',
-      badge: 'Priority Alert'
-    };
-    setLostReports((prev) => [newReport, ...prev]);
+      image: report.image || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80'
+    });
+    setLostReports(getMissingPersons());
     addToast(
       'Broadcast & AI Facial Index Active',
-      `Case ${newReport.id} registered for ${newReport.name}. Broadcast sent to all checkpoints.`,
+      `Case ${saved.id} registered for ${saved.name}. Broadcast sent to all checkpoints.`,
       'success'
     );
   };

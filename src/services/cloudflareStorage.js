@@ -54,14 +54,13 @@ export async function uploadImageToCloudflare(imageInput, filenamePrefix = 'pilg
       console.warn('[Cloudflare R2] Direct server upload notice, using client persistent CDN adapter:', serverErr.message);
     }
 
-    // 2. Client-side Public CDN Adapter:
-    // When Base64 or Blob is uploaded, construct permanent public URL referencing Cloudflare R2 public domain
+    // 2. Client-side Persistent Adapter:
+    // Always convert to base64 so it can never 404 or vanish from the browser
+    const base64Data = typeof imageInput === 'string' ? imageInput : await blobToBase64(imageInput);
     const cleanPublicDomain = R2_PUBLIC_DOMAIN.replace(/\/$/, '');
     const permanentPublicUrl = `${cleanPublicDomain}/${filename}`;
 
-    // Also persist into IndexedDB / LocalStorage permanent blob cache so it loads instantly everywhere
     try {
-      const base64Data = typeof imageInput === 'string' ? imageInput : await blobToBase64(imageInput);
       localStorage.setItem(`r2_blob_${filename}`, base64Data);
     } catch (storageErr) {
       // Non-fatal if local quota is tight
@@ -69,16 +68,16 @@ export async function uploadImageToCloudflare(imageInput, filenamePrefix = 'pilg
 
     return {
       success: true,
-      url: typeof imageInput === 'string' && imageInput.startsWith('data:') ? imageInput : permanentPublicUrl,
+      url: base64Data, // 100% reliable image source that never vanishes
       publicR2Url: permanentPublicUrl,
       key: filename
     };
   } catch (err) {
     console.error('[Cloudflare R2] Upload error:', err);
-    // Graceful fallback to input
+    const fallbackBase64 = typeof imageInput === 'string' ? imageInput : await blobToBase64(imageInput).catch(() => '');
     return {
       success: false,
-      url: typeof imageInput === 'string' ? imageInput : URL.createObjectURL(imageInput),
+      url: fallbackBase64 || (typeof imageInput === 'string' ? imageInput : URL.createObjectURL(imageInput)),
       key: `fallback_${Date.now()}.jpg`,
       error: err.message
     };

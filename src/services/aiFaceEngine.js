@@ -57,14 +57,35 @@ export const loadFaceModels = async () => {
 };
 
 /**
- * Helper to load an image source into HTMLImageElement
+ * Helper to load an image source into HTMLImageElement safely (CORS & Base64 safe)
  */
 export const loadImageElement = (src) => {
   return new Promise((resolve, reject) => {
+    if (!src) return reject(new Error('Image source is missing.'));
+    if (typeof HTMLImageElement !== 'undefined' && src instanceof HTMLImageElement) {
+      if (src.complete && src.naturalWidth > 0) return resolve(src);
+    }
+
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    
+    // Only set crossOrigin for remote HTTP/HTTPS URLs (never for data: or blob: URLs)
+    const isRemote = typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'));
+    if (isRemote) {
+      img.crossOrigin = 'anonymous';
+    }
+
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Failed to load image source for facial analysis.'));
+    img.onerror = () => {
+      // If remote failed with crossOrigin, retry without crossOrigin
+      if (isRemote && img.crossOrigin) {
+        const retryImg = new Image();
+        retryImg.onload = () => resolve(retryImg);
+        retryImg.onerror = () => reject(new Error('Failed to load image source.'));
+        retryImg.src = src;
+      } else {
+        reject(new Error('Failed to load image source.'));
+      }
+    };
     img.src = src;
   });
 };
