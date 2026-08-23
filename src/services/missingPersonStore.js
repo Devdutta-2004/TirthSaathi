@@ -10,7 +10,8 @@ const STORAGE_KEYS = {
   BIOMETRIC_VECTORS: 'tirthsaathi_biometric_vectors_db',
   CITIZEN_SIGHTINGS: 'tirthsaathi_citizen_sightings_db',
   AI_AUDIT_LOGS: 'tirthsaathi_ai_audit_logs_db',
-  HISTORICAL_CASES: 'tirthsaathi_historical_reunions_db'
+  HISTORICAL_CASES: 'tirthsaathi_historical_reunions_db',
+  BENCHMARK_DEVOTEES: 'tirthsaathi_benchmark_devotees_db'
 };
 
 // Initial Seed Missing People Database
@@ -375,18 +376,97 @@ export function recordAIScanAudit(auditEntry) {
 
 export function updateAuditGroundTruth(queryId, groundTruthStatus, reviewerNotes = '') {
   const current = getAIAuditLogs();
+  let updatedLog = null;
   const updated = current.map((log) => {
     if (log.queryId === queryId) {
-      return {
+      updatedLog = {
         ...log,
         groundTruthStatus,
         reviewerNotes: reviewerNotes || log.reviewerNotes,
         verifiedAt: new Date().toISOString()
       };
+      return updatedLog;
     }
     return log;
   });
   writeStorage(STORAGE_KEYS.AI_AUDIT_LOGS, updated);
+  return { updatedLogs: updated, updatedLog };
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5. DYNAMIC BENCHMARK DEVOTEES STORE (ACCURACY GROUND TRUTH)
+// ─────────────────────────────────────────────────────────────
+
+export const INITIAL_BENCHMARKS = [
+  {
+    id: 'benchmark-1',
+    label: 'Grandfather (68y)',
+    tag: 'Verified Match #8841',
+    name: 'Rameshwar Sharma',
+    avatar: '👨‍🦳',
+    description: 'Gold glasses, white kurta • 97.4% similarity benchmark',
+    previewUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+    targetMatchId: 'TS-CASE-8841',
+    verifiedAccuracy: '100% True Positive',
+    addedAt: 'System Seed'
+  },
+  {
+    id: 'benchmark-2',
+    label: 'Lost Boy (8y)',
+    tag: 'Verified Match #8842',
+    name: 'Aarav Gupta',
+    avatar: '👦',
+    description: 'Young boy with bright smile • 95.8% similarity benchmark',
+    previewUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+    targetMatchId: 'TS-CASE-8842',
+    verifiedAccuracy: '100% True Positive',
+    addedAt: 'System Seed'
+  },
+  {
+    id: 'benchmark-3',
+    label: 'Unregistered Devotee',
+    tag: 'Verified Non-Match',
+    name: 'Vikram Mehta (Test Unknown)',
+    avatar: '🧑',
+    description: 'Face not in database • Verified true negative rejection',
+    previewUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+    targetMatchId: null,
+    verifiedAccuracy: '100% True Negative',
+    addedAt: 'System Seed'
+  }
+];
+
+export function getBenchmarkDevotees() {
+  return readStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, INITIAL_BENCHMARKS);
+}
+
+export function addBenchmarkDevotee(devotee) {
+  const current = getBenchmarkDevotees();
+  // Check if same photo or case ID already exists
+  const exists = current.some(
+    (b) => (devotee.targetMatchId && b.targetMatchId === devotee.targetMatchId) || b.previewUrl === devotee.previewUrl
+  );
+
+  const newBenchmark = {
+    id: `benchmark-${Date.now()}`,
+    label: devotee.label || `${devotee.name} (${devotee.age ? devotee.age + 'y' : 'Verified'})`,
+    tag: devotee.tag || (devotee.targetMatchId ? `Verified Case #${devotee.targetMatchId.slice(-4)}` : 'Verified Accurate Face'),
+    name: devotee.name || 'Verified Devotee',
+    avatar: devotee.avatar || '👤',
+    description: devotee.description || `Accuracy confirmed with Euclidean d=${devotee.euclideanDistance || '0.24'}`,
+    previewUrl: devotee.previewUrl,
+    targetMatchId: devotee.targetMatchId || null,
+    verifiedAccuracy: devotee.verifiedAccuracy || 'True Positive Verified',
+    isNew: true,
+    addedAt: new Date().toLocaleTimeString()
+  };
+
+  // If already exists, update it to top
+  const filtered = current.filter(
+    (b) => !(devotee.targetMatchId && b.targetMatchId === devotee.targetMatchId) && b.previewUrl !== devotee.previewUrl
+  );
+  const updated = [newBenchmark, ...filtered];
+  writeStorage(STORAGE_KEYS.BENCHMARK_DEVOTEES, updated);
   return updated;
 }
 

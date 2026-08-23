@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useYatra } from '../context/YatraContext';
 import {
   analyzeAndMatchFace,
-  loadFaceModels,
-  PRESET_TEST_PHOTOS
+  loadFaceModels
 } from '../services/aiFaceEngine';
 import {
   getMissingPersons,
@@ -11,6 +10,8 @@ import {
   getAIAuditLogs,
   calculateAIAccuracyMetrics,
   updateAuditGroundTruth,
+  getBenchmarkDevotees,
+  addBenchmarkDevotee,
   exportGovernmentDocketCSV,
   exportGovernmentDocketJSON
 } from '../services/missingPersonStore';
@@ -43,7 +44,10 @@ import {
   FileSpreadsheet,
   FileJson,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Trash2,
+  PlusCircle,
+  Award
 } from 'lucide-react';
 
 export const PunarMilanAIScreen = () => {
@@ -52,14 +56,17 @@ export const PunarMilanAIScreen = () => {
   // Navigation Tabs: 'scan' | 'database' | 'sightings' | 'accuracy'
   const [activeTab, setActiveTab] = useState('scan');
 
-  // Scanner State
-  const [selectedPhoto, setSelectedPhoto] = useState(PRESET_TEST_PHOTOS[0].previewUrl);
-  const [activePreset, setActivePreset] = useState(PRESET_TEST_PHOTOS[0].id);
+  // Scanner State - Defaults to Plain / No Image
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [activePreset, setActivePreset] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanStep, setScanStep] = useState(null);
   const [scanResult, setScanResult] = useState(null);
   const [modelsReady, setModelsReady] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Dynamic Benchmark Devotees (Updated on Verification)
+  const [benchmarkDevotees, setBenchmarkDevotees] = useState(getBenchmarkDevotees());
 
   // Database search & filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,6 +96,13 @@ export const PunarMilanAIScreen = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleClearPhoto = () => {
+    setSelectedPhoto(null);
+    setActivePreset(null);
+    setScanResult(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSelectPreset = (preset) => {
     setSelectedPhoto(preset.previewUrl);
     setActivePreset(preset.id);
@@ -96,7 +110,10 @@ export const PunarMilanAIScreen = () => {
   };
 
   const handleStartScan = async () => {
-    if (!selectedPhoto) return;
+    if (!selectedPhoto) {
+      addToast('Select a Photo', 'Please upload a portrait photo or select a benchmark devotee.', 'warning');
+      return;
+    }
     setIsScanning(true);
     setScanResult(null);
 
@@ -130,10 +147,50 @@ export const PunarMilanAIScreen = () => {
     }
   };
 
+  /**
+   * Ground truth verification handler:
+   * Updates audit log AND dynamically adds verified photo into Benchmark Devotees list!
+   */
   const handleGroundTruthFeedback = (queryId, status) => {
-    const updated = updateAuditGroundTruth(queryId, status);
-    setAuditLogs(updated);
-    addToast('Accuracy Audit Updated', `Query ${queryId} marked as ${status.replace('_', ' ').toUpperCase()}`, 'success');
+    const { updatedLogs, updatedLog } = updateAuditGroundTruth(queryId, status);
+    setAuditLogs(updatedLogs);
+
+    // If verified as accurate positive match, dynamically update Benchmark Devotees list!
+    if (status === 'true_positive' && scanResult?.topMatch) {
+      const updatedBenchmarks = addBenchmarkDevotee({
+        label: `${scanResult.topMatch.name} (${scanResult.topMatch.age})`,
+        name: scanResult.topMatch.name,
+        previewUrl: selectedPhoto || scanResult.topMatch.image,
+        targetMatchId: scanResult.topMatch.id,
+        tag: `Verified Case #${scanResult.topMatch.id.slice(-4)}`,
+        description: `${scanResult.topMatch.similarityScore}% similarity • Confirmed Ground Truth (Euclidean d=${scanResult.topMatch.euclideanDistance})`,
+        verifiedAccuracy: '100% True Positive (Verified)'
+      });
+      setBenchmarkDevotees(updatedBenchmarks);
+      addToast(
+        '🌟 Benchmark Devotees Updated!',
+        `${scanResult.topMatch.name}'s verified photo was added to Benchmark Devotees as ground truth!`,
+        'success'
+      );
+    } else if (status === 'true_negative' && selectedPhoto) {
+      const updatedBenchmarks = addBenchmarkDevotee({
+        label: `Verified Non-Match (${scanResult?.detectedBiometrics?.estimatedAge || 30}y)`,
+        name: `Verified Non-Match Pilgrim`,
+        previewUrl: selectedPhoto,
+        targetMatchId: null,
+        tag: 'Verified Unknown Devotee',
+        description: `Euclidean d=${scanResult?.topMatch?.euclideanDistance || '0.85'} • Confirmed True Negative Rejection`,
+        verifiedAccuracy: '100% True Negative (Verified)'
+      });
+      setBenchmarkDevotees(updatedBenchmarks);
+      addToast(
+        '🌟 Benchmark Devotees Updated!',
+        'Verified non-match face was added to Benchmark Devotees as a negative control!',
+        'success'
+      );
+    } else {
+      addToast('Accuracy Audit Updated', `Query marked as ${status.replace('_', ' ').toUpperCase()}`, 'info');
+    }
   };
 
   // Filtered Missing Profiles
@@ -166,7 +223,7 @@ export const PunarMilanAIScreen = () => {
               Biometric Facial Recognition & Sighting Hub
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-              Sub-millisecond mathematical vector search across registered pilgrims with permanent Cloudflare photo hosting and immutable AI accuracy audit trails.
+              Sub-millisecond mathematical vector search across registered pilgrims with permanent Cloudflare photo hosting, dynamic benchmark accuracy learning, and immutable audit trails.
             </p>
           </div>
 
@@ -229,35 +286,76 @@ export const PunarMilanAIScreen = () => {
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Target Portrait Photo
                 </span>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Upload Any Image</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedPhoto && (
+                    <button
+                      onClick={handleClearPhoto}
+                      className="text-xs font-bold text-slate-400 hover:text-red-600 flex items-center gap-1 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Clear</span>
+                    </button>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Image</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Photo Viewport */}
-              <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-navy-950 border border-slate-800 flex items-center justify-center group shadow-inner">
+              {/* Photo Viewport / Plain Minimal Upload State */}
+              <div
+                onClick={() => !selectedPhoto && fileInputRef.current?.click()}
+                className={`relative aspect-[4/3] rounded-3xl overflow-hidden transition-all flex items-center justify-center group ${
+                  selectedPhoto
+                    ? 'bg-navy-950 border border-slate-800 shadow-inner'
+                    : 'cursor-pointer border-2 border-dashed border-slate-300 hover:border-yatra-blue bg-slate-50/70 hover:bg-blue-50/30'
+                }`}
+              >
                 {selectedPhoto ? (
-                  <img
-                    src={selectedPhoto}
-                    alt="Scan Target"
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${isScanning ? 'opacity-70' : 'opacity-100'}`}
-                  />
+                  <>
+                    <img
+                      src={selectedPhoto}
+                      alt="Scan Target"
+                      className={`w-full h-full object-cover transition-opacity duration-300 ${isScanning ? 'opacity-70' : 'opacity-100'}`}
+                    />
+                    {/* Clear Button Floating Overlay */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClearPhoto();
+                      }}
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-navy-900/80 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-md z-10"
+                      title="Clear photo"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </>
                 ) : (
-                  <div className="text-center p-6 text-slate-400 space-y-2">
-                    <Camera className="w-10 h-10 mx-auto text-slate-500" />
-                    <p className="text-xs font-bold">No photo selected</p>
-                    <p className="text-[10px] text-slate-500">Upload portrait or choose a benchmark profile</p>
+                  /* Plain Clean Empty State */
+                  <div className="text-center p-8 space-y-3">
+                    <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center mx-auto shadow-sm group-hover:scale-105 transition-transform">
+                      <Camera className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-navy-900">Upload Portrait or Choose Benchmark</p>
+                      <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                        Drag & drop a pilgrim photo here or select from the benchmark list on the right.
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold">
+                      <Upload className="w-3 h-3" /> Select File from Device
+                    </span>
                   </div>
                 )}
 
@@ -298,6 +396,8 @@ export const PunarMilanAIScreen = () => {
                 className={`w-full py-4 rounded-2xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 ${
                   isScanning
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : !selectedPhoto
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                     : 'bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-navy-950 shadow-gold-sm active:scale-[0.98]'
                 }`}
               >
@@ -315,41 +415,48 @@ export const PunarMilanAIScreen = () => {
               </button>
             </div>
 
-            {/* Benchmark Samples & Architecture Card */}
+            {/* Benchmark Samples & Dynamic Learning Card */}
             <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
-              {/* Benchmark Profiles */}
+              {/* Benchmark Devotees with Dynamic Updates */}
               <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Benchmark Devotees
+                  <div>
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                      Benchmark Devotees ({benchmarkDevotees.length})
+                    </span>
+                    <span className="text-[10px] text-emerald-700 font-medium">● Updates on Accuracy Verification</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                    Live Ground Truth
                   </span>
-                  <span className="text-[10px] text-slate-400">Ground Truth Test</span>
                 </div>
 
-                <div className="space-y-2">
-                  {PRESET_TEST_PHOTOS.map((preset) => {
-                    const isActive = activePreset === preset.id;
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {benchmarkDevotees.map((preset) => {
+                    const isActive = activePreset === preset.id || selectedPhoto === preset.previewUrl;
                     return (
                       <button
                         key={preset.id}
                         onClick={() => handleSelectPreset(preset)}
                         className={`w-full p-2.5 rounded-2xl border text-left flex items-center gap-3 transition-all ${
                           isActive
-                            ? 'border-gold-500 bg-gold-50/50 shadow-xs'
+                            ? 'border-gold-500 bg-gold-50/50 shadow-xs ring-1 ring-gold-400/40'
                             : 'border-slate-200 hover:border-slate-300 bg-white'
                         }`}
                       >
                         <img
                           src={preset.previewUrl}
                           alt={preset.name}
-                          className="w-10 h-10 rounded-xl object-cover border border-slate-200"
+                          className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-1">
                             <span className="font-bold text-xs text-navy-900 truncate">
                               {preset.name}
                             </span>
-                            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${preset.targetMatchId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+                            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                              preset.targetMatchId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                            }`}>
                               {preset.tag}
                             </span>
                           </div>
@@ -488,7 +595,7 @@ export const PunarMilanAIScreen = () => {
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => addToast('Dispatching Call', `Calling ${scanResult.topMatch.contactPhone}...`, 'info')}
                           className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2"
@@ -498,10 +605,11 @@ export const PunarMilanAIScreen = () => {
                         </button>
                         <button
                           onClick={() => handleGroundTruthFeedback(scanResult.auditQueryId, 'true_positive')}
-                          className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"
-                          title="Verify Accuracy in Audit Log"
+                          className="py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all"
+                          title="Verify Accuracy & Add to Benchmark Devotees"
                         >
-                          Verify Accuracy ✓
+                          <Award className="w-3.5 h-3.5" />
+                          <span>Verify Accuracy (Save Benchmark) ✓</span>
                         </button>
                       </div>
                     </div>
@@ -526,21 +634,22 @@ export const PunarMilanAIScreen = () => {
 
                   <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="text-xs text-amber-950">
-                      <strong>Want to take action on this face?</strong>
-                      <p className="text-[11px] text-amber-800 mt-0.5">Register as a missing person or log as a citizen sighting.</p>
+                      <strong>Want to take action or verify this accuracy result?</strong>
+                      <p className="text-[11px] text-amber-800 mt-0.5">Confirm as verified non-match to update the Benchmark negative controls.</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => setActiveModal('report-sighting')}
-                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm"
+                        onClick={() => handleGroundTruthFeedback(scanResult.auditQueryId, 'true_negative')}
+                        className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm flex items-center gap-1"
                       >
-                        Log Citizen Sighting
+                        <Award className="w-3.5 h-3.5" />
+                        <span>Verify True Negative (Save Benchmark)</span>
                       </button>
                       <button
-                        onClick={() => setActiveModal('report-missing')}
-                        className="px-3.5 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs shadow-sm"
+                        onClick={() => setActiveModal('report-sighting')}
+                        className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm"
                       >
-                        Register Missing Case
+                        Log Sighting
                       </button>
                     </div>
                   </div>
@@ -847,7 +956,7 @@ export const PunarMilanAIScreen = () => {
                           <button
                             onClick={() => handleGroundTruthFeedback(log.queryId, 'true_positive')}
                             className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold"
-                            title="Mark as True Positive"
+                            title="Mark as True Positive (Adds to Benchmarks)"
                           >
                             TP ✓
                           </button>
