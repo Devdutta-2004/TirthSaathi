@@ -59,7 +59,7 @@ export function compressImageIfNeeded(imageInput, maxDim = 480, quality = 0.82) 
  * 
  * @param {File|Blob|string} imageInput - File, Blob, or Base64 data URL
  * @param {string} filenamePrefix - Prefix for the filename (e.g. 'pilgrim', 'sighting')
- * @returns {Promise<{ success: boolean, url: string, key: string, sizeBytes?: number }>}
+ * @returns {Promise<{ success: boolean, url: string, publicR2Url: string, key: string, sizeBytes?: number }>}
  */
 export async function uploadImageToCloudflare(imageInput, filenamePrefix = 'pilgrim') {
   try {
@@ -70,40 +70,32 @@ export async function uploadImageToCloudflare(imageInput, filenamePrefix = 'pilg
     // 1. Compress image to efficient ~35KB portrait so memory never gets overloaded
     const base64Data = await compressImageIfNeeded(imageInput);
 
-    // 2. If backend server is running with Cloudflare R2 S3 credentials, use server upload bridge
+    // 2. Upload to Cloudflare R2 via Server / Vercel API Bridge
+    let cloudflarePublicUrl = null;
     try {
-      const formData = new FormData();
-      const fetchRes = await fetch(base64Data);
-      const blob = await fetchRes.blob();
-      formData.append('file', blob, filename);
-      formData.append('filename', filename);
-
       const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : '';
       const response = await fetch(`${serverUrl}/api/upload-cloudflare`, {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          base64Data,
+          filename
+        })
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.url) {
-          console.log(`[Cloudflare R2] Successfully uploaded to: ${data.url}`);
-          return {
-            success: true,
-            url: base64Data, // Store compressed Base64 locally so it's always fast and reliable
-            publicR2Url: data.url,
-            key: filename,
-            sizeBytes: data.sizeBytes
-          };
+          cloudflarePublicUrl = data.url;
+          console.log(`[Cloudflare R2] Successfully uploaded to bucket: ${data.url}`);
         }
       }
     } catch (serverErr) {
-      // Non-fatal, client persistent adapter takes over
+      console.warn('[Cloudflare R2] Cloud API notice:', serverErr.message);
     }
 
-    // 3. Client-side Persistent Adapter
     const cleanPublicDomain = R2_PUBLIC_DOMAIN.replace(/\/$/, '');
-    const permanentPublicUrl = `${cleanPublicDomain}/${filename}`;
+    const permanentPublicUrl = cloudflarePublicUrl || `${cleanPublicDomain}/${filename}`;
 
     try {
       localStorage.setItem(`r2_blob_${filename}`, base64Data);
@@ -113,7 +105,7 @@ export async function uploadImageToCloudflare(imageInput, filenamePrefix = 'pilg
 
     return {
       success: true,
-      url: base64Data, // 100% reliable image source that never vanishes
+      url: base64Data, // Store compressed Base64 locally so it's always fast and reliable
       publicR2Url: permanentPublicUrl,
       key: filename
     };
@@ -123,6 +115,7 @@ export async function uploadImageToCloudflare(imageInput, filenamePrefix = 'pilg
     return {
       success: false,
       url: fallbackBase64 || (typeof imageInput === 'string' ? imageInput : URL.createObjectURL(imageInput)),
+      publicR2Url: '',
       key: `fallback_${Date.now()}.jpg`,
       error: err.message
     };

@@ -11,6 +11,7 @@
     "vercel-build": "npm install --install-scripts && vite build"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1116.0",
     "@vladmandic/face-api": "^1.7.15",
     "clsx": "^2.1.1",
     "firebase": "^12.18.0",
