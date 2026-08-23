@@ -12,6 +12,7 @@ import {
   updateAuditGroundTruth,
   getBenchmarkDevotees,
   addBenchmarkDevotee,
+  clearAllLocalMissingData,
   exportGovernmentDocketCSV,
   exportGovernmentDocketJSON
 } from '../services/missingPersonStore';
@@ -47,7 +48,8 @@ import {
   ChevronRight,
   Trash2,
   PlusCircle,
-  Award
+  Award,
+  RotateCcw
 } from 'lucide-react';
 
 export const PunarMilanAIScreen = () => {
@@ -158,15 +160,10 @@ export const PunarMilanAIScreen = () => {
     }
   };
 
-  /**
-   * Ground truth verification handler:
-   * Updates audit log AND dynamically adds verified photo into Benchmark Devotees list!
-   */
   const handleGroundTruthFeedback = (queryId, status) => {
     const { updatedLogs, updatedLog } = updateAuditGroundTruth(queryId, status);
     setAuditLogs(updatedLogs);
 
-    // If verified as accurate positive match, dynamically update Benchmark Devotees list!
     if (status === 'true_positive' && scanResult?.topMatch) {
       const updatedBenchmarks = addBenchmarkDevotee({
         label: `${scanResult.topMatch.name} (${scanResult.topMatch.age})`,
@@ -204,12 +201,20 @@ export const PunarMilanAIScreen = () => {
     }
   };
 
+  const handleResetAllData = async () => {
+    if (window.confirm('Are you sure you want to clear all data and start completely fresh?')) {
+      await clearAllLocalMissingData();
+      handleClearPhoto();
+      addToast('Database Reset', 'All database tables and local cache cleared.', 'info');
+    }
+  };
+
   // Filtered Missing Profiles
   const missingProfiles = useMemo(() => {
     return missingPersonsList.filter((p) => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.lastSeen.toLowerCase().includes(searchQuery.toLowerCase());
+        (p.lastSeen && p.lastSeen.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -227,13 +232,13 @@ export const PunarMilanAIScreen = () => {
               <Sparkles className="w-3.5 h-3.5 text-gold-400" />
               <span>PunarMilan AI 2.0 (पुनर्मिलन)</span>
               <span className="text-white/30">•</span>
-              <span className="font-mono text-[10px] text-emerald-400">Cloudflare R2 + 128D Vector DB</span>
+              <span className="font-mono text-[10px] text-emerald-400">Cloudflare R2 + Supabase PostgreSQL</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Biometric Facial Recognition & Sighting Hub
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-              Sub-millisecond mathematical vector search across registered pilgrims with permanent Cloudflare photo hosting, dynamic benchmark accuracy learning, and immutable audit trails.
+              Sub-millisecond mathematical vector search across registered pilgrims with permanent Cloudflare photo hosting, dynamic benchmark accuracy learning, and Supabase PostgreSQL cloud sync.
             </p>
           </div>
 
@@ -252,6 +257,13 @@ export const PunarMilanAIScreen = () => {
             >
               <UserPlus className="w-4 h-4" />
               <span>Register Missing Case</span>
+            </button>
+            <button
+              onClick={handleResetAllData}
+              title="Reset all data to empty"
+              className="p-2.5 rounded-2xl bg-white/10 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-white/10 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -339,7 +351,6 @@ export const PunarMilanAIScreen = () => {
                       alt="Scan Target"
                       className={`w-full h-full object-cover transition-opacity duration-300 ${isScanning ? 'opacity-70' : 'opacity-100'}`}
                     />
-                    {/* Clear Button Floating Overlay */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -352,15 +363,14 @@ export const PunarMilanAIScreen = () => {
                     </button>
                   </>
                 ) : (
-                  /* Plain Clean Empty State */
                   <div className="text-center p-8 space-y-3">
                     <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center mx-auto shadow-sm group-hover:scale-105 transition-transform">
                       <Camera className="w-8 h-8" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-navy-900">Upload Portrait or Choose Benchmark</p>
+                      <p className="text-sm font-bold text-navy-900">Upload Portrait or Choose Registered Profile</p>
                       <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                        Drag & drop a pilgrim photo here or select from the benchmark list on the right.
+                        Drag & drop a pilgrim photo here or click upload to test facial vector matching.
                       </p>
                     </div>
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold">
@@ -427,7 +437,7 @@ export const PunarMilanAIScreen = () => {
 
             {/* Benchmark Samples & Dynamic Learning Card */}
             <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
-              {/* Benchmark Devotees with Dynamic Updates */}
+              {/* Benchmark Devotees */}
               <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -442,41 +452,51 @@ export const PunarMilanAIScreen = () => {
                 </div>
 
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                  {benchmarkDevotees.map((preset) => {
-                    const isActive = activePreset === preset.id || selectedPhoto === preset.previewUrl;
-                    return (
-                      <button
-                        key={preset.id}
-                        onClick={() => handleSelectPreset(preset)}
-                        className={`w-full p-2.5 rounded-2xl border text-left flex items-center gap-3 transition-all ${
-                          isActive
-                            ? 'border-gold-500 bg-gold-50/50 shadow-xs ring-1 ring-gold-400/40'
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
-                        }`}
-                      >
-                        <img
-                          src={preset.previewUrl}
-                          alt={preset.name}
-                          className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-bold text-xs text-navy-900 truncate">
-                              {preset.name}
-                            </span>
-                            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
-                              preset.targetMatchId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {preset.tag}
-                            </span>
+                  {benchmarkDevotees.length === 0 ? (
+                    <div className="p-6 text-center border border-dashed border-slate-200 rounded-2xl text-slate-400 space-y-1.5">
+                      <Camera className="w-7 h-7 mx-auto text-slate-300" />
+                      <p className="text-xs font-bold text-slate-600">No benchmark photos yet</p>
+                      <p className="text-[11px] text-slate-400">
+                        When you register a missing person or verify a scan, their photos will appear here for 1-click testing.
+                      </p>
+                    </div>
+                  ) : (
+                    benchmarkDevotees.map((preset) => {
+                      const isActive = activePreset === preset.id || selectedPhoto === preset.previewUrl;
+                      return (
+                        <button
+                          key={preset.id}
+                          onClick={() => handleSelectPreset(preset)}
+                          className={`w-full p-2.5 rounded-2xl border text-left flex items-center gap-3 transition-all ${
+                            isActive
+                              ? 'border-gold-500 bg-gold-50/50 shadow-xs ring-1 ring-gold-400/40'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                          }`}
+                        >
+                          <img
+                            src={preset.previewUrl}
+                            alt={preset.name}
+                            className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="font-bold text-xs text-navy-900 truncate">
+                                {preset.name}
+                              </span>
+                              <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                                preset.targetMatchId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {preset.tag}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {preset.description}
+                            </p>
                           </div>
-                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                            {preset.description}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
@@ -498,12 +518,12 @@ export const PunarMilanAIScreen = () => {
                     <span className="font-mono text-emerald-400">Cloudflare R2 Bucket</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-white/10">
-                    <span className="text-slate-400">Vector Math Index:</span>
-                    <span className="font-mono text-white">128D Float32 (In-Memory)</span>
+                    <span className="text-slate-400">Cloud DBMS:</span>
+                    <span className="font-mono text-white">Supabase PostgreSQL</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-slate-400">Match Threshold:</span>
-                    <span className="font-mono text-gold-300">Euclidean Distance &lt; 0.60</span>
+                    <span className="text-slate-400">Vector Math:</span>
+                    <span className="font-mono text-gold-300">128D Float32 (d &lt; 0.60)</span>
                   </div>
                 </div>
               </div>
@@ -566,7 +586,6 @@ export const PunarMilanAIScreen = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
-                    {/* Side by side comparison */}
                     <div className="md:col-span-5 grid grid-cols-2 gap-3">
                       <div className="space-y-1 text-center">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Uploaded Query</span>
@@ -582,7 +601,6 @@ export const PunarMilanAIScreen = () => {
                       </div>
                     </div>
 
-                    {/* Details & Action */}
                     <div className="md:col-span-7 space-y-3">
                       <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-2">
                         <div className="flex items-start gap-2">
@@ -637,7 +655,7 @@ export const PunarMilanAIScreen = () => {
                         No Matching Missing Record in Database
                       </h3>
                       <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                        Face was detected (Age ~{scanResult.detectedBiometrics.estimatedAge}), but the Euclidean distance against all registered vectors was above the 0.60 threshold (Best match distance was d={scanResult.topMatch ? scanResult.topMatch.euclideanDistance : '0.8+'}).
+                        Face was detected (Age ~{scanResult.detectedBiometrics.estimatedAge}), but the Euclidean distance against all registered vectors was above the 0.60 threshold.
                       </p>
                     </div>
                   </div>
@@ -661,30 +679,6 @@ export const PunarMilanAIScreen = () => {
                       >
                         Log Sighting
                       </button>
-                    </div>
-                  </div>
-
-                  {/* Candidate Distances Table */}
-                  <div className="pt-2">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                      Euclidean Distance Matrix Log
-                    </span>
-                    <div className="space-y-1.5">
-                      {scanResult.allCandidates.map((c) => (
-                        <div key={c.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                          <div className="flex items-center gap-2">
-                            <img src={c.image} alt={c.name} className="w-7 h-7 rounded-lg object-cover" />
-                            <span className="font-bold text-slate-800">{c.name}</span>
-                            <span className="text-slate-400 font-mono text-[10px]">({c.id})</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="font-mono text-slate-500 text-[11px]">Euclidean d={c.euclideanDistance}</span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">
-                              {c.similarityPercent}% Non-Match
-                            </span>
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
@@ -730,62 +724,81 @@ export const PunarMilanAIScreen = () => {
           </div>
 
           {/* Missing Profiles Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {missingProfiles.map((person) => (
-              <div
-                key={person.id}
-                className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3"
-              >
-                <div>
-                  <div className="flex items-start gap-3">
-                    <img
-                      src={person.image}
-                      alt={person.name}
-                      className="w-16 h-16 rounded-2xl object-cover border border-slate-200 flex-shrink-0 shadow-xs"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-bold text-slate-400">{person.id}</span>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                          person.status === 'located' || person.status === 'reunited'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {person.status}
-                        </span>
-                      </div>
-                      <h4 className="font-bold text-sm text-navy-900 truncate mt-0.5">{person.name}</h4>
-                      <p className="text-[11px] text-slate-500">{person.age} yrs • {person.gender}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 p-2.5 bg-slate-50 rounded-2xl border border-slate-100 text-[11px] text-slate-600 space-y-1">
-                    <div className="flex items-start gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <span className="truncate">{person.lastSeen}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
-                      <span>Reported: {person.timeReported}</span>
-                      <span>Sightings: <strong>{person.sightingsCount || 0}</strong></span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-1 border-t border-slate-100">
-                  <button
-                    onClick={() => {
-                      setSelectedPhoto(person.image);
-                      setActiveTab('scan');
-                    }}
-                    className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy-900 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Scan className="w-3.5 h-3.5" />
-                    <span>Run AI Match</span>
-                  </button>
-                </div>
+          {missingProfiles.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-sm space-y-3">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center mx-auto shadow-sm">
+                <Users className="w-8 h-8" />
               </div>
-            ))}
-          </div>
+              <h4 className="font-bold text-base text-navy-900">No Missing Cases Registered Yet</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Your database is clean and ready. Click "Register Missing Case" to upload a pilgrim's photo and record details.
+              </p>
+              <button
+                onClick={() => setActiveModal('report-missing')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-navy-950 text-xs font-bold shadow-md"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Register First Missing Case</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {missingProfiles.map((person) => (
+                <div
+                  key={person.id}
+                  className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                >
+                  <div>
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={person.image}
+                        alt={person.name}
+                        className="w-16 h-16 rounded-2xl object-cover border border-slate-200 flex-shrink-0 shadow-xs"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono font-bold text-slate-400">{person.id}</span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            person.status === 'located' || person.status === 'reunited'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {person.status}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm text-navy-900 truncate mt-0.5">{person.name}</h4>
+                        <p className="text-[11px] text-slate-500">{person.age} yrs • {person.gender}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 p-2.5 bg-slate-50 rounded-2xl border border-slate-100 text-[11px] text-slate-600 space-y-1">
+                      <div className="flex items-start gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <span className="truncate">{person.lastSeen}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+                        <span>Reported: {person.timeReported}</span>
+                        <span>Sightings: <strong>{person.sightingsCount || 0}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-1 border-t border-slate-100">
+                    <button
+                      onClick={() => {
+                        setSelectedPhoto(person.image);
+                        setActiveTab('scan');
+                      }}
+                      className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy-900 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Scan className="w-3.5 h-3.5" />
+                      <span>Run AI Match</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -808,51 +821,70 @@ export const PunarMilanAIScreen = () => {
             </button>
           </div>
 
-          <div className="space-y-3">
-            {citizenSightings.map((s) => (
-              <div
-                key={s.id}
-                className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          {citizenSightings.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-sm space-y-3">
+              <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center mx-auto shadow-sm">
+                <Eye className="w-8 h-8" />
+              </div>
+              <h4 className="font-bold text-base text-navy-900">No Sightings Reported Yet</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Devotees and temple volunteers can upload photos and attach live GPS to report anyone they spot.
+              </p>
+              <button
+                onClick={() => setActiveModal('report-sighting')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md"
               >
-                <div className="flex items-center gap-4">
-                  <img
-                    src={s.photoUrl}
-                    alt="Sighting"
-                    className="w-16 h-16 rounded-2xl object-cover border border-slate-200 flex-shrink-0 shadow-xs"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] text-slate-400 font-bold">{s.id}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        s.status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {s.status === 'verified' ? 'Biometric Match' : 'Unclaimed'}
-                      </span>
+                <Eye className="w-4 h-4" />
+                <span>Log First Sighting</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {citizenSightings.map((s) => (
+                <div
+                  key={s.id}
+                  className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={s.photoUrl}
+                      alt="Sighting"
+                      className="w-16 h-16 rounded-2xl object-cover border border-slate-200 flex-shrink-0 shadow-xs"
+                    />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[10px] text-slate-400 font-bold">{s.id}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          s.status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {s.status === 'verified' ? 'Biometric Match' : 'Unclaimed'}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-sm text-navy-900">{s.personName}</h4>
+                      <p className="text-xs text-slate-600 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                        <span>{s.locationName}</span>
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        Reported by: <strong>{s.reportedBy}</strong> • {new Date(s.timestamp).toLocaleTimeString()}
+                      </p>
                     </div>
-                    <h4 className="font-bold text-sm text-navy-900">{s.personName}</h4>
-                    <p className="text-xs text-slate-600 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{s.locationName}</span>
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      Reported by: <strong>{s.reportedBy}</strong> • {new Date(s.timestamp).toLocaleTimeString()}
-                    </p>
+                  </div>
+
+                  <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
+                    {s.similarityScore && (
+                      <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                        {s.similarityScore}% Match (d={s.euclideanDistance})
+                      </span>
+                    )}
+                    <span className="text-[10px] font-mono text-slate-400">
+                      GPS: {s.coords?.lat?.toFixed(4)}, {s.coords?.lng?.toFixed(4)}
+                    </span>
                   </div>
                 </div>
-
-                <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
-                  {s.similarityScore && (
-                    <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
-                      {s.similarityScore}% Match (d={s.euclideanDistance})
-                    </span>
-                  )}
-                  <span className="text-[10px] font-mono text-slate-400">
-                    GPS: {s.coords?.lat?.toFixed(4)}, {s.coords?.lng?.toFixed(4)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -930,60 +962,70 @@ export const PunarMilanAIScreen = () => {
           <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
             <h4 className="font-bold text-sm text-navy-900">AI Biometric Telemetry & Ground Truth Audit Trail</h4>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
-                    <th className="py-2.5 px-3">Query ID</th>
-                    <th className="py-2.5 px-3">Age / Gender</th>
-                    <th className="py-2.5 px-3">Matched Case</th>
-                    <th className="py-2.5 px-3">Euclidean (d)</th>
-                    <th className="py-2.5 px-3">Similarity</th>
-                    <th className="py-2.5 px-3">Ground Truth</th>
-                    <th className="py-2.5 px-3 text-right">Verification</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {auditLogs.map((log) => (
-                    <tr key={log.queryId} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-3 font-mono text-[11px] font-bold text-navy-900">{log.queryId}</td>
-                      <td className="py-3 px-3 text-slate-700">~{log.detectedAge}y • {log.detectedGender}</td>
-                      <td className="py-3 px-3 font-bold text-slate-800">{log.matchedName || 'None'}</td>
-                      <td className="py-3 px-3 font-mono text-slate-600">d={log.euclideanDistance}</td>
-                      <td className="py-3 px-3 font-mono font-bold text-emerald-700">{log.similarityPercent}%</td>
-                      <td className="py-3 px-3">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
-                          log.groundTruthStatus === 'true_positive' ? 'bg-emerald-100 text-emerald-800' :
-                          log.groundTruthStatus === 'true_negative' ? 'bg-blue-100 text-blue-800' :
-                          log.groundTruthStatus === 'false_positive' ? 'bg-red-100 text-red-800' :
-                          'bg-slate-100 text-slate-600'
-                        }`}>
-                          {log.groundTruthStatus.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleGroundTruthFeedback(log.queryId, 'true_positive')}
-                            className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold"
-                            title="Mark as True Positive (Adds to Benchmarks)"
-                          >
-                            TP ✓
-                          </button>
-                          <button
-                            onClick={() => handleGroundTruthFeedback(log.queryId, 'false_positive')}
-                            className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-800 text-[10px] font-bold"
-                            title="Mark as False Positive"
-                          >
-                            FP ✗
-                          </button>
-                        </div>
-                      </td>
+            {auditLogs.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl text-slate-400 space-y-1">
+                <BarChart3 className="w-7 h-7 mx-auto text-slate-300" />
+                <p className="text-xs font-bold text-slate-600">No facial scans audited yet</p>
+                <p className="text-[11px] text-slate-400">
+                  Every scan you perform in the AI Facial Search tab will automatically log its Euclidean distance and biometrics here.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
+                      <th className="py-2.5 px-3">Query ID</th>
+                      <th className="py-2.5 px-3">Age / Gender</th>
+                      <th className="py-2.5 px-3">Matched Case</th>
+                      <th className="py-2.5 px-3">Euclidean (d)</th>
+                      <th className="py-2.5 px-3">Similarity</th>
+                      <th className="py-2.5 px-3">Ground Truth</th>
+                      <th className="py-2.5 px-3 text-right">Verification</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {auditLogs.map((log) => (
+                      <tr key={log.queryId} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-3 font-mono text-[11px] font-bold text-navy-900">{log.queryId}</td>
+                        <td className="py-3 px-3 text-slate-700">~{log.detectedAge}y • {log.detectedGender}</td>
+                        <td className="py-3 px-3 font-bold text-slate-800">{log.matchedName || 'None'}</td>
+                        <td className="py-3 px-3 font-mono text-slate-600">d={log.euclideanDistance}</td>
+                        <td className="py-3 px-3 font-mono font-bold text-emerald-700">{log.similarityPercent}%</td>
+                        <td className="py-3 px-3">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                            log.groundTruthStatus === 'true_positive' ? 'bg-emerald-100 text-emerald-800' :
+                            log.groundTruthStatus === 'true_negative' ? 'bg-blue-100 text-blue-800' :
+                            log.groundTruthStatus === 'false_positive' ? 'bg-red-100 text-red-800' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {log.groundTruthStatus?.replace('_', ' ') || 'unconfirmed'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleGroundTruthFeedback(log.queryId, 'true_positive')}
+                              className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold"
+                              title="Mark as True Positive (Adds to Benchmarks)"
+                            >
+                              TP ✓
+                            </button>
+                            <button
+                              onClick={() => handleGroundTruthFeedback(log.queryId, 'false_positive')}
+                              className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-800 text-[10px] font-bold"
+                              title="Mark as False Positive"
+                            >
+                              FP ✗
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

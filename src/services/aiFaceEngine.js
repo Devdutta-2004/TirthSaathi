@@ -91,40 +91,9 @@ export const loadImageElement = (src) => {
 };
 
 /**
- * Benchmark Preset Devotees for Testing
+ * Benchmark Preset Devotees (Clean - Populated on Real User Uploads & Verifications)
  */
-export const PRESET_TEST_PHOTOS = [
-  {
-    id: 'preset-1',
-    label: 'Grandfather (68y)',
-    tag: 'Match #8841',
-    name: 'Rameshwar Sharma',
-    avatar: '👨‍🦳',
-    description: 'Gold glasses, white kurta',
-    previewUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-    targetMatchId: 'TS-CASE-8841'
-  },
-  {
-    id: 'preset-2',
-    label: 'Lost Boy (8y)',
-    tag: 'Match #8842',
-    name: 'Aarav Gupta',
-    avatar: '👦',
-    description: 'Young boy with bright smile',
-    previewUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
-    targetMatchId: 'TS-CASE-8842'
-  },
-  {
-    id: 'preset-3',
-    label: 'Unregistered Devotee',
-    tag: 'Non-Match (Different Person)',
-    name: 'Vikram Mehta (Test Unknown)',
-    avatar: '🧑',
-    description: 'Photo not in database to verify mismatch rejection',
-    previewUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-    targetMatchId: null
-  }
-];
+export const PRESET_TEST_PHOTOS = [];
 
 /**
  * Extract 128D descriptor vector from an image element or URL
