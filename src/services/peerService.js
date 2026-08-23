@@ -17,11 +17,13 @@ class PeerMeshService {
     this.listeners = new Set();
     this.isReady = false;
     this.discoveryInterval = null;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 3;
   }
 
   formatPeerId(groupCode, deviceId) {
-    const cleanGroup = groupCode.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const cleanDev = deviceId.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanGroup = (groupCode || 'default').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanDev = (deviceId || 'dev1').toLowerCase().replace(/[^a-z0-9]/g, '');
     return `tirth-${cleanGroup}-${cleanDev}`;
   }
 
@@ -38,25 +40,25 @@ class PeerMeshService {
     this.userName = userName;
     this.userRole = userRole;
     this.myPeerId = this.formatPeerId(groupCode, deviceId);
+    this.reconnectAttempts = 0;
 
     try {
       this.peer = new Peer(this.myPeerId, {
-        debug: 0, // Clean production mode (no noisy console logs)
+        debug: 0,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478' }
+            { urls: 'stun:stun1.l.google.com:19302' }
           ]
         }
       });
 
       this.peer.on('open', (id) => {
         this.isReady = true;
+        this.reconnectAttempts = 0;
         this.notifyListeners({ type: 'PEER_READY', payload: { peerId: id } });
 
-        // Start active group discovery
+        // Start group discovery
         this.startDiscovery();
       });
 
@@ -65,15 +67,20 @@ class PeerMeshService {
       });
 
       this.peer.on('error', (err) => {
-        // Suppress benign peer discovery errors when other group members are offline
-        if (err.type === 'unavailable-id' || err.type === 'peer-unavailable') {
+        // Suppress expected peer discovery/offline notices
+        if (err.type === 'unavailable-id' || err.type === 'peer-unavailable' || err.type === 'server-error' || err.type === 'socket-error') {
           return;
         }
       });
 
       this.peer.on('disconnected', () => {
-        if (this.peer && !this.peer.destroyed) {
-          this.peer.reconnect();
+        if (this.peer && !this.peer.destroyed && this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          setTimeout(() => {
+            if (this.peer && !this.peer.destroyed) {
+              try { this.peer.reconnect(); } catch (e) {}
+            }
+          }, 3000);
         }
       });
     } catch (e) {
@@ -82,10 +89,11 @@ class PeerMeshService {
   }
 
   setupConnection(conn) {
+    if (!conn) return;
+
     conn.on('open', () => {
       this.connections.set(conn.peer, conn);
 
-      // Send initial HELLO packet with device profile
       conn.send({
         type: 'PEER_HELLO',
         payload: {
@@ -128,9 +136,9 @@ class PeerMeshService {
   startDiscovery() {
     if (this.discoveryInterval) clearInterval(this.discoveryInterval);
 
-    // Group circle mesh discovery
     const tryConnectSeeds = () => {
-      const cleanGroup = this.groupCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!this.peer || !this.isReady) return;
+      const cleanGroup = (this.groupCode || 'default').toLowerCase().replace(/[^a-z0-9]/g, '');
       const defaultSlots = ['lead', 'member1', 'member2', 'phone1', 'phone2', 'admin'];
 
       defaultSlots.forEach((slot) => {
@@ -142,7 +150,7 @@ class PeerMeshService {
     };
 
     tryConnectSeeds();
-    this.discoveryInterval = setInterval(tryConnectSeeds, 8000);
+    this.discoveryInterval = setInterval(tryConnectSeeds, 10000);
   }
 
   handleIncomingData(senderPeerId, data) {
@@ -153,12 +161,10 @@ class PeerMeshService {
   broadcast(type, payload = {}) {
     const packet = { type, payload, senderPeerId: this.myPeerId, senderName: this.userName };
     for (const [peerId, conn] of this.connections.entries()) {
-      if (conn.open) {
+      if (conn && conn.open) {
         try {
           conn.send(packet);
-        } catch (e) {
-          // send safe
-        }
+        } catch (e) {}
       }
     }
   }
@@ -206,7 +212,12 @@ class PeerMeshService {
     });
   }
 
+  subscribe(fn) {
+    return this.addListener(fn);
+  }
+
   addListener(fn) {
+    if (typeof fn !== 'function') return () => {};
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
   }
@@ -215,9 +226,7 @@ class PeerMeshService {
     for (const fn of this.listeners) {
       try {
         fn(event);
-      } catch (e) {
-        // safe
-      }
+      } catch (e) {}
     }
   }
 
@@ -229,9 +238,7 @@ class PeerMeshService {
     if (this.peer) {
       try {
         this.peer.destroy();
-      } catch (e) {
-        // safe
-      }
+      } catch (e) {}
       this.peer = null;
     }
     this.connections.clear();
