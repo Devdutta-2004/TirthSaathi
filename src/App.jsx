@@ -18,6 +18,7 @@ import { ProfileScreen } from './screens/ProfileScreen';
 // Global Overlays & Modals
 import { SOSModal } from './components/Modals/SOSModal';
 import { ReportMissingModal } from './components/Modals/ReportMissingModal';
+import { ReportSightingModal } from './components/Modals/ReportSightingModal';
 import { DigitalIdModal } from './components/Modals/DigitalIdModal';
 import { FamilyGroupModal } from './components/Modals/FamilyGroupModal';
 import { DestinationModal } from './components/Modals/DestinationModal';
@@ -64,6 +65,7 @@ export function App() {
         {/* Global Modals & Notifications */}
         <SOSModal />
         <ReportMissingModal />
+        <ReportSightingModal />
         <DigitalIdModal />
         <FamilyGroupModal />
         <DestinationModal />
