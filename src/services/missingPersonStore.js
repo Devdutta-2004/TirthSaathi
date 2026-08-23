@@ -601,8 +601,8 @@ function mapAuditLogToDb(l) {
 export async function fetchFromSupabase(tableName) {
   const serverUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:3001' : '';
 
-  // 1. Try Direct Supabase REST if key present
-  if (SUPABASE_URL && SUPABASE_KEY) {
+  // 1. Try Direct Supabase REST if valid client key is present
+  if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_KEY.length > 20) {
     try {
       const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}?select=*`;
       const res = await fetch(endpoint, {
@@ -627,7 +627,7 @@ export async function fetchFromSupabase(tableName) {
       return await proxyRes.json();
     }
   } catch (err) {
-    console.warn(`[Supabase Proxy] Fetch notice for ${tableName}:`, err.message);
+    // safe fallback
   }
 
   return null;
@@ -640,8 +640,8 @@ export async function syncToSupabase(tableName, record) {
   else if (tableName === 'biometric_vectors') dbPayload = mapBiometricVectorToDb(record);
   else if (tableName === 'ai_accuracy_logs') dbPayload = mapAuditLogToDb(record);
 
-  // 1. Try Direct Supabase REST if client key present
-  if (SUPABASE_URL && SUPABASE_KEY) {
+  // 1. Try Direct Supabase REST if valid client key is present
+  if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_KEY.length > 20) {
     try {
       const endpoint = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${tableName}`;
       const res = await fetch(endpoint, {
@@ -655,7 +655,6 @@ export async function syncToSupabase(tableName, record) {
         body: JSON.stringify(dbPayload)
       });
       if (res.ok) {
-        console.log(`[Supabase PostgreSQL] Direct synced: ${tableName}`);
         return;
       }
     } catch (e) {
