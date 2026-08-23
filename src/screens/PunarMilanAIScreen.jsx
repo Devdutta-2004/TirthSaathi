@@ -12,6 +12,9 @@ import {
   updateAuditGroundTruth,
   getBenchmarkDevotees,
   addBenchmarkDevotee,
+  deleteMissingPerson,
+  deleteCitizenSighting,
+  deleteBenchmarkDevotee,
   clearAllLocalMissingData,
   exportGovernmentDocketCSV,
   exportGovernmentDocketJSON
@@ -198,6 +201,35 @@ export const PunarMilanAIScreen = () => {
       );
     } else {
       addToast('Accuracy Audit Updated', `Query marked as ${status.replace('_', ' ').toUpperCase()}`, 'info');
+    }
+  };
+
+  const handleDeleteCase = (caseId, name) => {
+    if (window.confirm(`Are you sure you want to permanently delete case ${caseId} (${name})?`)) {
+      deleteMissingPerson(caseId);
+      setMissingPersonsList(getMissingPersons());
+      setBenchmarkDevotees(getBenchmarkDevotees());
+      if (selectedPhoto && scanResult?.topMatch?.id === caseId) {
+        handleClearPhoto();
+      }
+      addToast('Case Deleted', `Case ${caseId} (${name}) was permanently deleted.`, 'info');
+    }
+  };
+
+  const handleDeleteSighting = (sightingId) => {
+    if (window.confirm(`Are you sure you want to delete sighting ${sightingId}?`)) {
+      deleteCitizenSighting(sightingId);
+      setCitizenSightingsList(getCitizenSightings());
+      addToast('Sighting Deleted', `Sighting ${sightingId} was deleted.`, 'info');
+    }
+  };
+
+  const handleDeleteBenchmark = (e, benchmarkId, name) => {
+    e.stopPropagation();
+    if (window.confirm(`Remove ${name} from benchmark devotees?`)) {
+      const updated = deleteBenchmarkDevotee(benchmarkId);
+      setBenchmarkDevotees(updated);
+      addToast('Benchmark Removed', `${name} removed from test presets.`, 'info');
     }
   };
 
@@ -464,36 +496,48 @@ export const PunarMilanAIScreen = () => {
                     benchmarkDevotees.map((preset) => {
                       const isActive = activePreset === preset.id || selectedPhoto === preset.previewUrl;
                       return (
-                        <button
+                        <div
                           key={preset.id}
-                          onClick={() => handleSelectPreset(preset)}
-                          className={`w-full p-2.5 rounded-2xl border text-left flex items-center gap-3 transition-all ${
+                          className={`w-full p-2.5 rounded-2xl border text-left flex items-center justify-between gap-2.5 transition-all group ${
                             isActive
                               ? 'border-gold-500 bg-gold-50/50 shadow-xs ring-1 ring-gold-400/40'
                               : 'border-slate-200 hover:border-slate-300 bg-white'
                           }`}
                         >
-                          <img
-                            src={preset.previewUrl}
-                            alt={preset.name}
-                            className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="font-bold text-xs text-navy-900 truncate">
-                                {preset.name}
-                              </span>
-                              <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
-                                preset.targetMatchId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                              }`}>
-                                {preset.tag}
-                              </span>
+                          <button
+                            onClick={() => handleSelectPreset(preset)}
+                            className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                          >
+                            <img
+                              src={preset.previewUrl}
+                              alt={preset.name}
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-xs text-navy-900 truncate">
+                                  {preset.name}
+                                </span>
+                                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                                  preset.targetMatchId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {preset.tag}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                                {preset.description}
+                              </p>
                             </div>
-                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                              {preset.description}
-                            </p>
-                          </div>
-                        </button>
+                          </button>
+
+                          <button
+                            onClick={(e) => handleDeleteBenchmark(e, preset.id, preset.name)}
+                            title="Remove from benchmark list"
+                            className="p-1.5 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       );
                     })
                   )}
@@ -783,18 +827,25 @@ export const PunarMilanAIScreen = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-1 border-t border-slate-100">
-                    <button
-                      onClick={() => {
-                        setSelectedPhoto(person.image);
-                        setActiveTab('scan');
-                      }}
-                      className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy-900 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <Scan className="w-3.5 h-3.5" />
-                      <span>Run AI Match</span>
-                    </button>
-                  </div>
+                    <div className="flex gap-2 pt-1 border-t border-slate-100">
+                      <button
+                        onClick={() => {
+                          setSelectedPhoto(person.image);
+                          setActiveTab('scan');
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy-900 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <Scan className="w-3.5 h-3.5" />
+                        <span>Run AI Match</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCase(person.id, person.name)}
+                        title="Delete Case from Database"
+                        className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200/60 transition-colors flex items-center justify-center"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                 </div>
               ))}
             </div>
@@ -872,11 +923,20 @@ export const PunarMilanAIScreen = () => {
                   </div>
 
                   <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
-                    {s.similarityScore && (
-                      <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
-                        {s.similarityScore}% Match (d={s.euclideanDistance})
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {s.similarityScore && (
+                        <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                          {s.similarityScore}% Match (d={s.euclideanDistance})
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleDeleteSighting(s.id)}
+                        title="Delete sighting"
+                        className="p-1.5 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                     <span className="text-[10px] font-mono text-slate-400">
                       GPS: {s.coords?.lat?.toFixed(4)}, {s.coords?.lng?.toFixed(4)}
                     </span>
