@@ -4,7 +4,7 @@ export const destinations = [
     name: 'Varanasi',
     subtitle: 'Kashi Vishwanath • Uttar Pradesh',
     state: 'Uttar Pradesh',
-    image: '/images/varanasi_kashi.jpg',
+    image: '/images/uttar_pradesh_varanasi.jpg',
     badge: 'Ancient Spiritual Capital',
     rating: '4.9',
     reviewCount: '12,400+ Yatris',
