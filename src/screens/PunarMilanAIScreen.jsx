@@ -256,57 +256,57 @@ export const PunarMilanAIScreen = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 animate-fadeIn">
-      {/* ── HEADER BANNER ── */}
-      <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 rounded-3xl p-6 text-white border border-slate-800 shadow-xl relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── HEADER BANNER (CLEAN & MINIMAL SAFFRON GLASS THEME) ── */}
+      <div className="bg-gradient-to-r from-amber-600/95 via-amber-700/95 to-orange-800/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 text-white border border-amber-400/40 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/15 border border-gold-500/30 text-gold-300 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-              <span>PunarMilan AI 2.0 (पुनर्मिलन)</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-white/25 text-amber-100 text-[10px] font-extrabold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>PunarMilan AI (पुनर्मिलन)</span>
               <span className="text-white/30">•</span>
-              <span className="font-mono text-[10px] text-emerald-400">Cloudflare R2 + Supabase PostgreSQL</span>
+              <span className="text-emerald-300">Instant Face Match</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Biometric Facial Recognition & Sighting Hub
+            <h1 className="text-xl sm:text-2xl font-black font-display tracking-tight text-white">
+              Lost Person Biometric Search & Sighting Hub
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-              Sub-millisecond mathematical vector search across registered pilgrims with permanent Cloudflare photo hosting, dynamic benchmark accuracy learning, and Supabase PostgreSQL cloud sync.
+            <p className="text-xs text-amber-100/90 max-w-xl leading-relaxed">
+              Match separated family members in seconds using mathematical facial vector recognition across registered cases.
             </p>
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={() => setActiveModal('report-sighting')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md hover:shadow-emerald-500/20 transition-all active:scale-[0.98]"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-bold shadow-sm transition-all active:scale-[0.98] border border-emerald-400/30"
             >
               <Eye className="w-4 h-4" />
-              <span>I Found Someone</span>
+              <span>Found Someone</span>
             </button>
             <button
               onClick={() => setActiveModal('report-missing')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-navy-950 text-xs font-bold shadow-md hover:shadow-gold-500/20 transition-all active:scale-[0.98]"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-amber-950 hover:bg-amber-50 text-xs font-extrabold shadow-md transition-all active:scale-[0.98]"
             >
-              <UserPlus className="w-4 h-4" />
-              <span>Register Missing Case</span>
+              <UserPlus className="w-4 h-4 text-amber-700" />
+              <span>+ Register Case</span>
             </button>
             <button
               onClick={handleResetAllData}
               title="Reset all data to empty"
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-white/10 transition-colors"
+              className="p-2 rounded-xl bg-white/15 hover:bg-red-500/30 text-amber-100 hover:text-white border border-white/20 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* ── CLEAN MODERN TAB SWITCHER ── */}
-        <div className="flex items-center gap-1.5 pt-6 mt-4 border-t border-white/10 overflow-x-auto no-scrollbar">
+        {/* ── ALL 4 TAB BUTTONS IN RESPONSIVE GRID (ZERO HORIZONTAL SCROLL) ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/15">
           {[
-            { id: 'scan', label: 'AI Facial Search', icon: Scan },
-            { id: 'database', label: `Missing Database (${missingProfiles.length})`, icon: Users },
-            { id: 'sightings', label: `Citizen Sightings (${citizenSightings.length})`, icon: Eye },
-            { id: 'accuracy', label: `AI Accuracy & Govt Audit (${accuracyMetrics.accuracyRate}%)`, icon: BarChart3 }
+            { id: 'scan', label: 'AI Face Search', icon: Scan },
+            { id: 'database', label: `Missing (${missingProfiles.length})`, icon: Users },
+            { id: 'sightings', label: `Sightings (${citizenSightings.length})`, icon: Eye },
+            { id: 'accuracy', label: `Accuracy & Audit`, icon: BarChart3 }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -314,14 +314,14 @@ export const PunarMilanAIScreen = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-white text-navy-950 shadow-md scale-100'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-white text-amber-950 shadow-md font-extrabold'
+                    : 'bg-white/15 text-amber-100 hover:bg-white/25 hover:text-white border border-white/15'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-700' : 'text-amber-200'}`} />
+                <span className="truncate">{tab.label}</span>
               </button>
             );
           })}
@@ -359,7 +359,7 @@ export const PunarMilanAIScreen = () => {
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+                    className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>Upload Image</span>
@@ -373,7 +373,7 @@ export const PunarMilanAIScreen = () => {
                 className={`relative aspect-[4/3] rounded-3xl overflow-hidden transition-all flex items-center justify-center group ${
                   selectedPhoto
                     ? 'bg-navy-950 border border-slate-800 shadow-inner'
-                    : 'cursor-pointer border-2 border-dashed border-slate-300 hover:border-yatra-blue bg-slate-50/70 hover:bg-blue-50/30'
+                    : 'cursor-pointer border-2 border-dashed border-amber-300/80 hover:border-amber-500 bg-amber-50/40 hover:bg-amber-50/70'
                 }`}
               >
                 {selectedPhoto ? (
@@ -396,17 +396,17 @@ export const PunarMilanAIScreen = () => {
                   </>
                 ) : (
                   <div className="text-center p-8 space-y-3">
-                    <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center mx-auto shadow-sm group-hover:scale-105 transition-transform">
+                    <div className="w-16 h-16 rounded-3xl bg-amber-500/15 text-amber-700 border border-amber-200/80 flex items-center justify-center mx-auto shadow-xs group-hover:scale-105 transition-transform">
                       <Camera className="w-8 h-8" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-navy-900">Upload Portrait or Choose Registered Profile</p>
+                      <p className="text-sm font-bold text-amber-950">Upload Portrait or Choose Benchmark Profile</p>
                       <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
                         Drag & drop a pilgrim photo here or click upload to test facial vector matching.
                       </p>
                     </div>
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold">
-                      <Upload className="w-3 h-3" /> Select File from Device
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white text-amber-900 border border-amber-200 text-[11px] font-bold shadow-xs">
+                      <Upload className="w-3 h-3 text-amber-600" /> Select File from Device
                     </span>
                   </div>
                 )}
@@ -450,7 +450,7 @@ export const PunarMilanAIScreen = () => {
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     : !selectedPhoto
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                    : 'bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-navy-950 shadow-gold-sm active:scale-[0.98]'
+                    : 'bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 text-white shadow-md active:scale-[0.98]'
                 }`}
               >
                 {isScanning ? (

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useYatra } from '../context/YatraContext';
 import { createEntryPass } from '../services/passService';
 import {
@@ -27,7 +27,10 @@ import {
   Check,
   CircleDot,
   Ticket,
-  BadgePercent
+  BadgePercent,
+  Megaphone,
+  Award,
+  Radio
 } from 'lucide-react';
 
 export const HomeScreen = () => {
@@ -55,6 +58,14 @@ export const HomeScreen = () => {
   const [generatedPass, setGeneratedPass] = useState(null);
   const [genericDetailModal, setGenericDetailModal] = useState(null);
 
+  // Single Rotating Guru Hero Slideshow States
+  const [currentGuruIndex, setCurrentGuruIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [selectedGuruEvent, setSelectedGuruEvent] = useState(null);
+  const [advertiseModalOpen, setAdvertiseModalOpen] = useState(false);
+  const [guruBookingSuccess, setGuruBookingSuccess] = useState(false);
+  const [advFormSubmitted, setAdvFormSubmitted] = useState(false);
+
   // Minimal Category Bar Items with Single-Color Lucide Icons
   const categories = [
     { id: 'for_you', label: 'For you', icon: Sparkles },
@@ -67,6 +78,55 @@ export const HomeScreen = () => {
 
   // Rich Full-Width State Destination Cards with Famous Shrines
   const stateDestinations = [
+    {
+      id: 'gujarat',
+      stateName: 'Gujarat',
+      tagline: 'Somnath, Dwarkadhish, Ambaji & Pavagadh',
+      badge: 'First Jyotirlinga & Char Dham',
+      bgImage: '/images/somnath_temple_gujarat.jpg',
+      shrines: [
+        {
+          id: 'somnath',
+          name: 'Shree Somnath Jyotirlinga',
+          city: 'Prabhas Patan',
+          image: '/images/somnath_temple_gujarat.jpg',
+          tag: '1st Jyotirlinga',
+          liveWait: '12 mins',
+          slotsLeft: 480,
+          gates: ['Digvijay Dwar (Gate 1)', 'Sardar Gate (Gate 2)', 'Triveni Sangam Gate (Gate 3)']
+        },
+        {
+          id: 'dwarka',
+          name: 'Dwarkadhish Temple (Jagat Mandir)',
+          city: 'Dwarka',
+          image: '/images/dwarkadhish_temple_gujarat.jpg',
+          tag: 'Char Dham',
+          liveWait: '18 mins',
+          slotsLeft: 360,
+          gates: ['Moksha Dwar (Gate 1)', 'Swarga Dwar (Gate 2)', 'Kalyan Dwar (Gate 3)']
+        },
+        {
+          id: 'ambaji',
+          name: 'Shree Ambaji Mata Mandir',
+          city: 'Banaskantha',
+          image: '/images/ambaji_temple_gujarat.jpg',
+          tag: '51 Shakti Peeth',
+          liveWait: '14 mins',
+          slotsLeft: 310,
+          gates: ['Shakti Dwar (Gate 1)', 'Gabbar Hill Corridor (Gate 2)', 'Mansarovar Dwar (Gate 3)']
+        },
+        {
+          id: 'pavagadh',
+          name: 'Kalika Mata Temple (Pavagadh)',
+          city: 'Champaner',
+          image: '/images/pavagadh_temple_gujarat.jpg',
+          tag: 'Hilltop Shakti Peeth',
+          liveWait: '15 mins',
+          slotsLeft: 420,
+          gates: ['Udan Khatola Gate (Gate 1)', 'Machi Pagathiya Gate (Gate 2)', 'Mahakali Shikhar Gate (Gate 3)']
+        }
+      ]
+    },
     {
       id: 'up',
       stateName: 'Uttar Pradesh',
@@ -88,7 +148,7 @@ export const HomeScreen = () => {
           id: 'ayodhya',
           name: 'Shree Ram Janmabhoomi Mandir',
           city: 'Ayodhya',
-          image: 'https://images.unsplash.com/photo-1590077428593-a55bb07c4665?auto=format&fit=crop&w=600&q=80',
+          image: '/images/ayodhya_ram_mandir_grand.jpg',
           tag: 'Ram Janmabhoomi',
           liveWait: '25 mins',
           slotsLeft: 310,
@@ -111,13 +171,13 @@ export const HomeScreen = () => {
       stateName: 'Jammu & Kashmir',
       tagline: 'Mata Vaishno Devi Holy Cave Shrine',
       badge: 'Trikuta Mountain',
-      bgImage: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80',
+      bgImage: '/images/vaishno_devi_bhawan_shrine.jpg',
       shrines: [
         {
           id: 'vaishno_devi',
           name: 'Shri Mata Vaishno Devi Shrine',
           city: 'Katra',
-          image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
+          image: '/images/vaishno_devi_bhawan_shrine.jpg',
           tag: 'Shakti Peeth',
           liveWait: '15 mins',
           slotsLeft: 640,
@@ -159,13 +219,13 @@ export const HomeScreen = () => {
       stateName: 'Uttarakhand',
       tagline: 'Char Dham: Kedarnath, Badrinath & Haridwar',
       badge: 'Himalayan Shrines',
-      bgImage: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1200&q=80',
+      bgImage: '/images/kedarnath_dham_uttarakhand.jpg',
       shrines: [
         {
           id: 'kedarnath',
           name: 'Kedarnath Dham',
           city: 'Rudraprayag',
-          image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=600&q=80',
+          image: '/images/kedarnath_dham_uttarakhand.jpg',
           tag: 'Char Dham Jyotirlinga',
           liveWait: '20 mins',
           slotsLeft: 220,
@@ -175,7 +235,7 @@ export const HomeScreen = () => {
           id: 'badrinath',
           name: 'Badrinath Temple',
           city: 'Chamoli',
-          image: 'https://images.unsplash.com/photo-1590077428593-a55bb07c4665?auto=format&fit=crop&w=600&q=80',
+          image: '/images/badrinath_dham_uttarakhand.jpg',
           tag: 'Vishnu Dham',
           liveWait: '15 mins',
           slotsLeft: 340,
@@ -188,13 +248,13 @@ export const HomeScreen = () => {
       stateName: 'Madhya Pradesh',
       tagline: 'Mahakaleshwar Ujjain & Omkareshwar Jyotirlinga',
       badge: 'Mahakal Corridor',
-      bgImage: 'https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=1200&q=80',
+      bgImage: '/images/madhya_pradesh_mahakal.jpg',
       shrines: [
         {
           id: 'mahakal',
           name: 'Shree Mahakaleshwar Temple',
           city: 'Ujjain',
-          image: 'https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=600&q=80',
+          image: '/images/madhya_pradesh_mahakal.jpg',
           tag: 'Bhasma Aarti',
           liveWait: '22 mins',
           slotsLeft: 380,
@@ -212,7 +272,7 @@ export const HomeScreen = () => {
       subtitle: 'Dashashwamedh Ghat, Varanasi',
       time: '6:30 PM',
       badge: 'Live at Sunset',
-      image: 'https://images.unsplash.com/photo-1571536802807-30451e3955d8?auto=format&fit=crop&w=600&q=80',
+      image: '/images/maha_ganga_aarti_varanasi.jpg',
       description: 'World famous Grand Evening Aarti performed by 7 priests on the holy ghats of Kashi with conch shells and sacred brass lamps.'
     },
     {
@@ -221,7 +281,7 @@ export const HomeScreen = () => {
       subtitle: 'Ram Janmabhoomi, Ayodhya',
       time: '7:00 PM',
       badge: 'Today 7:00 PM',
-      image: 'https://images.unsplash.com/photo-1590077428593-a55bb07c4665?auto=format&fit=crop&w=600&q=80',
+      image: '/images/ayodhya_ram_mandir_grand.jpg',
       description: 'Daily evening Sandhya Aarti inside the grand sanctum sanctorum of Shree Ram Mandir.'
     },
     {
@@ -230,7 +290,7 @@ export const HomeScreen = () => {
       subtitle: 'Holy Cave, Vaishno Devi',
       time: '6:00 AM & 6:00 PM',
       badge: 'Twice Daily',
-      image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
+      image: '/images/vaishno_devi_bhawan_shrine.jpg',
       description: 'Sacred live Bhajan Aarti performed in front of the Holy Pindies atop Trikuta Hills.'
     }
   ];
@@ -304,6 +364,67 @@ export const HomeScreen = () => {
       rateDetail: 'Standard Outstation & Local Airport/Cantt Station tariff.'
     }
   ];
+
+  // Featured Spiritual Gurus & Cultural Mahotsav Events (Sponsored Advertisements)
+  const spiritualGuruEvents = [
+    {
+      id: 'guru-event-1',
+      title: 'Shri Ram Katha & Divya Vedic Mahotsav',
+      guru: 'Pujya Jagadguru & Vedic Acharyas',
+      organizer: 'Vedic Dharma Seva Trust',
+      tag: 'Sponsored • 9-Day Katha',
+      date: '28 Aug – 05 Sep 2026',
+      timing: '4:00 PM – 7:30 PM Daily',
+      location: 'Ram Katha Park, Ayodhya Dham',
+      badge: 'Featured Satsang',
+      image: '/images/spiritual_guru_katha_event.jpg',
+      description: '9-Day Divine Ram Katha & Veda Parayan with sacred Aarti and free Maha-Prasad distribution. Yatris can register for free digital Seva Passes and verified priority seating.',
+      entryFee: 'Free Seva Pass',
+      seatsAvailable: '450 Seva Passes Remaining',
+      features: ['Live Vedic Chanting', 'Free Satvik Maha-Prasad', 'Senior Devotee Seating Area', 'Direct Temple Shikhara View']
+    },
+    {
+      id: 'guru-event-2',
+      title: 'Maha Shivratri Sangeet Mahotsav & Dhyan Conclave',
+      guru: 'Spiritual Masters & Indian Classical Artists',
+      organizer: 'Sanatan Kala & Dhyan Foundation',
+      tag: 'Sponsored • Cultural Conclave',
+      date: '15 Sep 2026',
+      timing: '6:00 PM – Dawn 6:00 AM',
+      location: 'Mahakal Lok Amphitheater, Ujjain',
+      badge: 'All-Night Event',
+      image: '/images/mahashivratri_cultural_mahotsav.jpg',
+      description: 'Grand all-night Shiv Mahotsav with 108 Vedic Pandits conducting Rudrabhishek, Indian classical sitar & flute concerts, and guided moonlight meditation.',
+      entryFee: 'Free Entry (Priority Seat ₹250)',
+      seatsAvailable: '280 Seats Remaining',
+      features: ['108 Pandit Rudrabhishek', 'Classical Sitar & Flute Recital', 'Guided Midnight Dhyan', 'Free Tea & Satvik Refreshments']
+    },
+    {
+      id: 'guru-event-3',
+      title: 'Maha Ganga Deep Mahotsav & Spiritual Youth Sammelan',
+      guru: 'Pujya Sant Mahasabha & Vedic Scholars',
+      organizer: 'Ganga Seva Nidhi Samiti',
+      tag: 'Sponsored • Youth Mahotsav',
+      date: '20 Sep – 22 Sep 2026',
+      timing: '5:30 PM – 9:00 PM',
+      location: 'Dashashwamedh & Assi Ghat, Varanasi',
+      badge: 'Cultural Fest',
+      image: '/images/maha_ganga_aarti_varanasi.jpg',
+      description: '3-Day Youth Cultural Conclave on ancient Sanatan philosophy, sacred hymns, cultural competitions, and a breathtaking 100,000 floating Diya festival on the holy Ganges.',
+      entryFee: '100% Free For All Yatris',
+      seatsAvailable: 'Open Ghat Seating',
+      features: ['100,000 Diya Deepotsav', 'Youth Vedic Quiz & Awards', 'Grand Musical Ganga Aarti', 'Holy Ganga Snan Assistance']
+    }
+  ];
+
+  // Auto-rotate the single sponsored guru advertisement box periodically
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentGuruIndex((prev) => (prev + 1) % spiritualGuruEvents.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [isPaused, spiritualGuruEvents.length]);
 
   // Carousel Scroll Navigation Helper
   const scrollCarousel = (direction) => {
@@ -514,6 +635,152 @@ export const HomeScreen = () => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── 5.5 SPONSORED SPIRITUAL GURUS & CULTURAL MAHOTSAVS (SINGLE EDGE-TO-EDGE ROTATING HERO BOX) ── */}
+      <div className="space-y-2 pt-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="font-black text-sm text-amber-950 font-display tracking-tight">
+              Spiritual Gurus & Cultural Mahotsavs
+            </h3>
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-900 border border-amber-300 font-mono uppercase tracking-wider">
+              Sponsored
+            </span>
+          </div>
+
+          {/* Ashram & Trust Advertisement Call-to-Action */}
+          <button
+            onClick={() => setAdvertiseModalOpen(true)}
+            className="text-[11px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-1 rounded-full flex items-center gap-1 transition-colors shadow-xs"
+            title="Advertise your Katha or Cultural Mahotsav on TirthSaathi"
+          >
+            <Megaphone className="w-3 h-3 text-amber-700" />
+            <span>Advertise Event</span>
+          </button>
+        </div>
+
+        {/* Single Full-Width Edge-to-Edge Rotating Box */}
+        <div
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onClick={() => setSelectedGuruEvent(spiritualGuruEvents[currentGuruIndex])}
+          className="relative w-full rounded-3xl overflow-hidden shadow-lg border border-amber-300/80 bg-navy-950 aspect-[16/10] sm:aspect-[21/9] cursor-pointer group select-none transition-all duration-300 hover:shadow-xl"
+        >
+          {/* Background Images with Smooth Cross-Fade Transition */}
+          {spiritualGuruEvents.map((evt, idx) => (
+            <img
+              key={evt.id}
+              src={evt.image}
+              alt={evt.title}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                idx === currentGuruIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
+              }`}
+            />
+          ))}
+
+          {/* Deep Cinematic Gradient Overlay for Maximum Readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/25" />
+
+          {/* Top Overlay: Badges and Slide Number */}
+          <div className="absolute top-3.5 left-4 right-4 flex items-center justify-between z-10">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-500 text-navy-950 shadow-md font-display uppercase tracking-wider">
+                {spiritualGuruEvents[currentGuruIndex].badge}
+              </span>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-amber-300 border border-amber-400/40">
+                {spiritualGuruEvents[currentGuruIndex].tag}
+              </span>
+            </div>
+
+            <span className="text-[10px] text-white/90 font-mono font-bold bg-black/50 px-2.5 py-0.5 rounded-full backdrop-blur-sm border border-white/20">
+              {currentGuruIndex + 1} / {spiritualGuruEvents.length}
+            </span>
+          </div>
+
+          {/* Left Arrow Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentGuruIndex((prev) => (prev - 1 + spiritualGuruEvents.length) % spiritualGuruEvents.length);
+            }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-amber-600 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 z-20 shadow-md border border-white/20"
+            title="Previous event"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          {/* Right Arrow Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentGuruIndex((prev) => (prev + 1) % spiritualGuruEvents.length);
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-amber-600 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 z-20 shadow-md border border-white/20"
+            title="Next event"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+
+          {/* Bottom Content Area */}
+          <div className="absolute bottom-3.5 left-4 right-4 text-white space-y-1.5 z-10">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5">
+              <div className="space-y-0.5 max-w-xl">
+                <span className="text-[11px] text-amber-300 font-bold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <span>{spiritualGuruEvents[currentGuruIndex].guru}</span>
+                  <span className="opacity-60">•</span>
+                  <span className="text-amber-200/90 font-medium">{spiritualGuruEvents[currentGuruIndex].organizer}</span>
+                </span>
+                <h4 className="font-extrabold text-base sm:text-lg tracking-tight font-display drop-shadow-md text-white">
+                  {spiritualGuruEvents[currentGuruIndex].title}
+                </h4>
+                <div className="flex items-center gap-3 text-[11px] text-amber-100/90 pt-0.5">
+                  <span className="flex items-center gap-1 font-bold">
+                    <Calendar className="w-3 h-3 text-amber-400" />
+                    {spiritualGuruEvents[currentGuruIndex].date}
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-amber-400" />
+                    {spiritualGuruEvents[currentGuruIndex].location}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedGuruEvent(spiritualGuruEvents[currentGuruIndex]);
+                  }}
+                  className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-navy-950 font-black text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5"
+                >
+                  <Ticket className="w-3.5 h-3.5 text-navy-950" />
+                  <span>Register Free Pass</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Slide Indicator Dots */}
+            <div className="flex items-center justify-center gap-1.5 pt-1">
+              {spiritualGuruEvents.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentGuruIndex(idx);
+                  }}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentGuruIndex ? 'w-6 bg-amber-400 shadow-xs' : 'w-1.5 bg-white/40 hover:bg-white/70'
+                  }`}
+                  title={`Slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -962,6 +1229,254 @@ export const HomeScreen = () => {
                 <span>Get Directions & View Map</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL 5: SPONSORED GURU EVENT & SEVA PASS REGISTRATION
+          ═══════════════════════════════════════════════════════════ */}
+      {selectedGuruEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-amber-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="relative aspect-[16/9] overflow-hidden">
+              <img
+                src={selectedGuruEvent.image}
+                alt={selectedGuruEvent.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <button
+                onClick={() => {
+                  setSelectedGuruEvent(null);
+                  setGuruBookingSuccess(false);
+                }}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-navy-900/80 hover:bg-navy-900 text-white flex items-center justify-center transition-colors shadow-md"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-3 left-4 right-4 text-white">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-navy-950 uppercase tracking-wider font-mono">
+                  {selectedGuruEvent.badge}
+                </span>
+                <h3 className="font-extrabold text-base font-display mt-1">
+                  {selectedGuruEvent.title}
+                </h3>
+              </div>
+            </div>
+
+            <div className="p-5 pt-0 space-y-3.5 text-xs">
+              {/* Guru & Organizer Info */}
+              <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/80 space-y-1">
+                <div className="flex items-center gap-1.5 text-amber-950 font-bold">
+                  <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <span>{selectedGuruEvent.guru}</span>
+                </div>
+                <p className="text-[11px] text-amber-800/80">
+                  Organized by: <strong>{selectedGuruEvent.organizer}</strong>
+                </p>
+              </div>
+
+              {/* Event Description */}
+              <p className="text-slate-600 leading-relaxed">
+                {selectedGuruEvent.description}
+              </p>
+
+              {/* Event Schedule & Location */}
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-0.5">
+                  <span className="text-slate-500 font-bold block">Dates & Timings</span>
+                  <p className="font-bold text-amber-950">{selectedGuruEvent.date}</p>
+                  <p className="text-slate-600 text-[10px]">{selectedGuruEvent.timing}</p>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-0.5">
+                  <span className="text-slate-500 font-bold block">Location</span>
+                  <p className="font-bold text-amber-950 truncate">{selectedGuruEvent.location}</p>
+                  <p className="text-emerald-700 font-bold text-[10px]">{selectedGuruEvent.seatsAvailable}</p>
+                </div>
+              </div>
+
+              {/* Highlights */}
+              <div className="space-y-1.5">
+                <span className="text-xs font-bold text-amber-950">Event Highlights & Seva:</span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {selectedGuruEvent.features?.map((f, i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-[11px] text-slate-700">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                      <span className="truncate">{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              {guruBookingSuccess ? (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-2xl text-center space-y-2">
+                  <div className="flex items-center justify-center gap-1.5 text-emerald-800 font-bold">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <span>Seva Pass Confirmed!</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700">
+                    Your digital pass has been linked. Show this on your device at the Satsang entrance.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSelectedGuruEvent(null);
+                      setGuruBookingSuccess(false);
+                    }}
+                    className="w-full py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-xs"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2 pt-1">
+                  <button
+                    onClick={() => {
+                      setGuruBookingSuccess(true);
+                      addToast(
+                        'Satsang Pass Reserved',
+                        `Free Seva Pass reserved for ${selectedGuruEvent.title}. See you there!`,
+                        'success'
+                      );
+                    }}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+                  >
+                    <Ticket className="w-4 h-4" />
+                    <span>Confirm Free Seva Pass ({selectedGuruEvent.entryFee})</span>
+                  </button>
+                  <p className="text-[10px] text-center text-slate-400">
+                    Verified spiritual event promoted via TirthSaathi Cultural Partnership
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL 6: ADVERTISE SPIRITUAL EVENT / KATHA (FOR ASHRAMS & TRUSTS)
+          ═══════════════════════════════════════════════════════════ */}
+      {advertiseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-amber-200 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
+                  <Megaphone className="w-4 h-4 text-amber-700" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-amber-950 font-display">
+                    Promote Your Spiritual Event
+                  </h3>
+                  <p className="text-[11px] text-slate-500">Reach 500,000+ active pilgrims across India</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setAdvertiseModalOpen(false);
+                  setAdvFormSubmitted(false);
+                }}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {advFormSubmitted ? (
+              <div className="py-6 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900">Inquiry Received!</h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                    Our Pilgrimage Events & Trust onboarding team will review your event details and contact your Ashram within 4 hours.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setAdvertiseModalOpen(false);
+                    setAdvFormSubmitted(false);
+                  }}
+                  className="px-6 py-2 rounded-xl bg-amber-600 text-white font-bold text-xs shadow-xs"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setAdvFormSubmitted(true);
+                  addToast(
+                    'Advertisement Request Sent',
+                    'Our cultural team will contact you shortly.',
+                    'success'
+                  );
+                }}
+                className="space-y-3 text-xs"
+              >
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">Ashram / Trust Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Shri Ram Seva Sansthan"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">Event / Katha Title</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 9-Day Shiv Katha"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">Host City / Dham</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Ayodhya, Ujjain"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">Organizer Contact Number</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+91 98765 43210"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">Expected Gathering</label>
+                    <select className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-amber-500">
+                      <option>1,000 – 5,000 Devotees</option>
+                      <option>5,000 – 25,000 Devotees</option>
+                      <option>25,000+ Maha gathering</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 mt-2 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-xs shadow-md transition-all"
+                >
+                  Submit Promotion Request
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}
