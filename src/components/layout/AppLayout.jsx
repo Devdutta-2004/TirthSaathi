@@ -62,8 +62,8 @@ export const AppLayout = ({ children }) => {
   const bottomNavItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'punarmilan', label: 'PunarMilan', icon: Scan },
-    { id: 'finder', label: 'Radar', icon: Users },
-    { id: 'crowd', label: 'Crowd Flow', icon: Compass },
+    { id: 'crowd', label: 'Crowd Flow', icon: Compass, isCenterHero: true },
+    { id: 'finder', label: 'Family Radar', icon: Users },
     { id: 'profile', label: 'Yatra Pass', icon: User },
   ];
 
@@ -295,13 +295,50 @@ export const AppLayout = ({ children }) => {
       </main>
 
       {/* ─────────────────────────────────────────────────────────────
-          4. MOBILE APP BOTTOM NAVIGATION BAR (Deep Royal Navy & Gold)
+          4. MOBILE APP BOTTOM NAVIGATION BAR (Elevated Center Hero)
       ───────────────────────────────────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#071426]/95 backdrop-blur-lg z-40 px-2 py-2 shadow-2xl border-t border-amber-500/25 text-white">
-        <div className="grid grid-cols-5 gap-1 items-center">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#071426]/98 backdrop-blur-xl z-40 px-2 py-1.5 shadow-2xl border-t border-amber-500/30 text-white">
+        <div className="grid grid-cols-5 gap-1 items-end">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentScreen === item.id;
+
+            // Elevated Hero Center Button (Crowd Flow - Core Feature)
+            if (item.isCenterHero) {
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentScreen(item.id)}
+                  className="relative -mt-6 flex flex-col items-center justify-center group focus:outline-none z-10"
+                >
+                  {/* Glowing Ambient Halo */}
+                  <div
+                    className={`absolute inset-0 rounded-full blur-md transition-opacity duration-300 ${
+                      isActive ? 'bg-amber-400/70 opacity-100 scale-125' : 'bg-amber-500/30 opacity-70'
+                    }`}
+                  />
+
+                  {/* Elevated Round Golden Hero Icon */}
+                  <div
+                    className={`relative w-13 h-13 rounded-full flex items-center justify-center border-3 border-[#071426] transition-all duration-300 shadow-xl ${
+                      isActive
+                        ? 'bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 text-navy-950 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.6)]'
+                        : 'bg-gradient-to-tr from-amber-600 to-amber-500 text-navy-950 hover:scale-105 shadow-md'
+                    }`}
+                  >
+                    <Icon className={`w-6 h-6 transition-transform duration-300 ${isActive ? 'rotate-12 scale-105' : 'group-hover:rotate-6'}`} />
+                    {/* Live Pulse Dot */}
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#071426] animate-pulse" />
+                  </div>
+
+                  <span className={`text-[10px] mt-0.5 font-black tracking-tight whitespace-nowrap transition-colors ${isActive ? 'text-amber-300 drop-shadow-sm' : 'text-amber-200/90'}`}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            }
+
+            // Standard Navigation Tabs
             return (
               <button
                 key={item.id}
