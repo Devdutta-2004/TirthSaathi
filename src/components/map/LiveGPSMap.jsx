@@ -197,17 +197,24 @@ export const LiveGPSMap = ({
               className="absolute pointer-events-auto cursor-pointer transition-transform duration-300 hover:scale-110"
             >
               {isSelected && (
-                <div className="w-12 h-12 rounded-full bg-amber-400/40 animate-ping absolute -top-1 -left-1 pointer-events-none" />
+                <div className="w-14 h-14 rounded-full bg-cyan-400/40 animate-ping absolute -top-2 -left-2 pointer-events-none" />
               )}
               <div
-                className={`px-2.5 py-1 rounded-2xl flex items-center gap-1.5 text-xs font-bold shadow-md border ${
+                className={`px-2 py-1 rounded-2xl flex items-center gap-1.5 text-xs font-bold shadow-glow border transition-all ${
                   isSelected
-                    ? 'bg-amber-400 text-navy-950 ring-2 ring-navy-900 shadow-glow'
-                    : 'bg-white text-navy-900 border-slate-200'
+                    ? 'bg-amber-400 text-navy-950 ring-2 ring-cyan-400 shadow-glow'
+                    : 'bg-[#051126]/90 text-white border-cyan-500/40 backdrop-blur-md'
                 }`}
               >
-                <span className="text-sm">{member.avatar || '👤'}</span>
-                <span className="text-[11px] whitespace-nowrap">{member.name ? member.name.split(' ')[0] : 'Devotee'}</span>
+                {/* Photo Avatar */}
+                <div className="w-6 h-6 rounded-full overflow-hidden border border-white/60 flex-shrink-0">
+                  <img
+                    src={member.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-[11px] font-mono whitespace-nowrap">{member.name ? member.name.split(' ')[0] : 'Node'}</span>
                 {distance > 0 && (
                   <span className="text-[9px] font-mono opacity-85">({distance}m)</span>
                 )}
@@ -226,12 +233,12 @@ export const LiveGPSMap = ({
             }}
             className="absolute pointer-events-none flex flex-col items-center"
           >
-            <div className="w-8 h-8 rounded-full bg-yatra-blue/30 animate-ping absolute -top-1" />
-            <div className="w-6 h-6 rounded-full bg-yatra-blue border-2 border-white shadow-lg flex items-center justify-center text-white text-[10px] font-bold">
-              📍
+            <div className="w-10 h-10 rounded-full bg-cyan-400/40 animate-ping absolute -top-2" />
+            <div className="w-7 h-7 rounded-full bg-cyan-500 border-2 border-white shadow-glow flex items-center justify-center text-navy-950 font-bold">
+              <Crosshair className="w-4 h-4 text-white" />
             </div>
-            <span className="bg-navy-950 text-white text-[9px] font-bold px-2 py-0.5 rounded-full mt-1 shadow-sm whitespace-nowrap">
-              You (Live Phone)
+            <span className="bg-[#030914] text-cyan-300 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full mt-1 border border-cyan-500/40 shadow-sm whitespace-nowrap">
+              HOST (YOU)
             </span>
           </div>
         )}
@@ -241,23 +248,23 @@ export const LiveGPSMap = ({
       <div className="absolute top-3 right-3 z-30 flex flex-col gap-2">
         <button
           onClick={handleCenterOnMe}
-          className="p-2.5 rounded-2xl bg-white hover:bg-slate-50 text-navy-900 border border-slate-200 shadow-md transition-colors"
+          className="p-2.5 rounded-2xl bg-[#051126]/90 hover:bg-[#081b3d] text-cyan-300 border border-cyan-500/40 shadow-glow transition-colors"
           title="Center on My Live GPS"
         >
-          <Crosshair className="w-4 h-4 text-yatra-blue" />
+          <Crosshair className="w-4 h-4 text-cyan-400" />
         </button>
 
-        <div className="flex flex-col rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-white">
+        <div className="flex flex-col rounded-2xl overflow-hidden border border-cyan-500/40 shadow-glow bg-[#051126]/90 backdrop-blur-md">
           <button
             onClick={() => setZoom((z) => Math.min(19, z + 1))}
-            className="p-2.5 hover:bg-slate-50 text-navy-900 border-b border-slate-100 transition-colors"
+            className="p-2.5 hover:bg-[#081b3d] text-cyan-300 border-b border-cyan-500/20 transition-colors"
             title="Zoom In"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={() => setZoom((z) => Math.max(12, z - 1))}
-            className="p-2.5 hover:bg-slate-50 text-navy-900 transition-colors"
+            className="p-2.5 hover:bg-[#081b3d] text-cyan-300 transition-colors"
             title="Zoom Out"
           >
             <ZoomOut className="w-4 h-4" />
@@ -266,10 +273,11 @@ export const LiveGPSMap = ({
       </div>
 
       {/* 6. BOTTOM TELEMETRY BAR */}
-      <div className="absolute bottom-3 left-3 z-30 bg-navy-950/90 text-white px-3 py-1.5 rounded-xl text-[11px] font-mono backdrop-blur-md border border-gold-500/30 flex items-center gap-2 shadow-md">
-        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-        <span>GPS Accuracy: ±{myAccuracy}m</span>
-        <span className="text-slate-400">• Zoom {zoom}x</span>
+      <div className="absolute bottom-3 left-3 z-30 bg-[#030914]/90 text-white px-3 py-1.5 rounded-xl text-[11px] font-mono backdrop-blur-md border border-cyan-500/40 flex items-center gap-2 shadow-glow">
+        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+        <span className="text-cyan-300">GPS ACCURACY: ±{myAccuracy}m</span>
+        <span className="text-slate-500">•</span>
+        <span className="text-slate-400">ZOOM {zoom}x</span>
       </div>
     </div>
   );

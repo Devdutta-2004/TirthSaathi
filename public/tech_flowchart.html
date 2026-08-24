@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TirthSaathi — Technical Architecture & ML System Flow</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Mermaid.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            cyber: {
+              bg: '#030814',
+              card: '#071326',
+              cardHover: '#0B1C38',
+              cyan: '#00F0FF',
+              blue: '#3B82F6',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              border: 'rgba(0, 240, 255, 0.25)',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #030814;
+      color: #E2E8F0;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 60%),
+        linear-gradient(to right, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+    }
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(0, 240, 255, 0.35);
+    }
+    .glow-amber {
+      box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.35);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+    }
+    .cyber-glass {
+      background: linear-gradient(135deg, rgba(7, 19, 38, 0.85) 0%, rgba(3, 8, 20, 0.95) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .mermaid svg {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #040A17;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #0E356A;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00F0FF;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-black pb-20">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-cyan-500/20 cyber-glass sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/40 flex items-center justify-center text-cyan-400 glow-cyan">
+          <i data-lucide="cpu" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-mono font-bold tracking-widest text-cyan-400 uppercase bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
+              ARCHITECTURE SPEC v2.4
+            </span>
+            <span class="text-xs text-emerald-400 font-mono flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live ML Mesh
+            </span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+            TirthSaathi — End-to-End System & ML Tech Flow
+          </h1>
+        </div>
+      </div>
+
+      <!-- Quick Nav Buttons -->
+      <div class="flex items-center gap-2">
+        <button onclick="window.print()" class="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-300 flex items-center gap-1.5 transition">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span>Print / Export PDF</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-10">
+
+    <!-- HERO INTRO -->
+    <div class="p-6 sm:p-8 rounded-3xl cyber-glass border border-cyan-500/30 relative overflow-hidden">
+      <div class="absolute -top-20 -right-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="relative z-10 max-w-4xl">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Closed-Loop Machine Learning, Real-Time P2P Mesh & Biometric Vision Architecture
+        </h2>
+        <p class="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
+          TirthSaathi ingests 40-year longitudinal pilgrimage footfall records, historical diurnal arrival curves, and live QR gate reservations into a continuous online learning ML engine. It dynamically re-routes devotees before stampede bottlenecks form, tracks family circles via WebRTC/UWB mesh, and connects to 14,000+ checkpoint CCTV embeddings for biometric facial identification.
+        </p>
+      </div>
+    </div>
+
+    <!-- MERMAID INTERACTIVE FLOWCHART SECTION -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-cyan-400 font-mono text-xs font-bold uppercase tracking-wider">
+          <i data-lucide="network" class="w-4 h-4"></i>
+          <span>Interactive Architectural Diagram</span>
+        </div>
+        <span class="text-xs text-slate-400 font-mono">Mermaid.js Vector Engine</span>
+      </div>
+
+      <div class="p-6 sm:p-8 rounded-3xl cyber-glass border border-cyan-500/30 overflow-x-auto shadow-2xl">
+        <pre class="mermaid text-center">
+flowchart TB
+    %% STYLING
+    classDef lang fill:#1E293B,stroke:#00F0FF,stroke-width:1.5px,color:#00F0FF;
+    classDef api fill:#0B2245,stroke:#F59E0B,stroke-width:1.5px,color:#FCD34D;
+    classDef nodeStyle fill:#040E1E,stroke:#3B82F6,stroke-width:2px,color:#FFFFFF;
+
+    subgraph STEP1["1. Historical Ingestion & ML Training Engine"]
+        A1["Longitudinal 40-Yr Dataset (1986–2026)<br/>• Month/Festival/Tithi Multipliers<br/>• Diurnal 24-Hr Gaussian Influx Curve"]:::nodeStyle
+        A2["ML Model Training<br/>• Fourier Seasonality Decomposition<br/>• CAGR Growth Trend Regression<br/>• Little's Law Queuing Model"]:::nodeStyle
+        A3["Languages & APIs Used:<br/>• Language: <b>Python 3.11 / JavaScript (ESM)</b><br/>• Libraries: <b>NumPy, Pandas, Scikit-Learn</b><br/>• Local Storage: <b>localStorage / IndexedDB</b>"]:::lang
+        A1 --> A2 --> A3
+    end
+
+    subgraph STEP2["2. Devotee Booking & Family QR Generation"]
+        B1["Devotee Slot Booking & Group Creation<br/>• Selects Temple, Gate & Time Buffer<br/>• Bundles Family Members into Linked Nodes"]:::nodeStyle
+        B2["Encrypted QR E-Pass Generation<br/>• Cryptographic Hash (HMAC-SHA256)<br/>• Gate Code & Slot Buffer Token"]:::nodeStyle
+        B3["Languages & APIs Used:<br/>• Language: <b>JavaScript / React 19</b><br/>• QR Generation: <b>Canvas API / qrcode.react</b><br/>• Cryptography: <b>Web Crypto API (crypto.subtle)</b><br/>• Database: <b>Supabase REST API (PostgreSQL)</b>"]:::api
+        B1 --> B2 --> B3
+    end
+
+    subgraph STEP3["3. Real-Time Telemetry & P2P Family Mesh"]
+        C1["Live Family Radar & UWB Precision HUD<br/>• Physical GPS Telemetry & Heading<br/>• Device Battery & Signal Diagnostics<br/>• Acoustic Sacred Chime Sound Beacon"]:::nodeStyle
+        C2["Decentralized Family Mesh Network<br/>• P2P WebRTC Direct Audio/Data Channels<br/>• Works even during Cell Tower Throttling"]:::nodeStyle
+        C3["Languages & APIs Used:<br/>• Location: <b>Web Geolocation API (watchPosition)</b><br/>• Compass: <b>DeviceOrientation / Motion API</b><br/>• Audio: <b>Web Audio API (AudioContext, OscillatorNode)</b><br/>• Battery: <b>Battery Status API (navigator.getBattery)</b><br/>• Networking: <b>WebRTC API (PeerJS / RTCDataChannel)</b><br/>• Maps: <b>OpenStreetMap Tile API (Leaflet)</b>"]:::lang
+        C1 --> C2 --> C3
+    end
+
+    subgraph STEP4["4. Live Influx, AI Routing & Wait Time Engine"]
+        D1["AI Live Density & Bottleneck Forecaster<br/>• Computes Gate Occupancy & Velocity<br/>• Estimates Waiting Time via Queuing Model<br/>• Proactively Suggests Less Crowded Gates"]:::nodeStyle
+        D2["Real-Time Server Synchronization<br/>• Sub-50ms Delta Broadcast to all Devotees"]:::nodeStyle
+        D3["Languages & APIs Used:<br/>• Language: <b>Node.js (v20) / JavaScript</b><br/>• Real-Time: <b>WebSocket Protocol (ws library)</b><br/>• State Management: <b>React Context API (YatraContext)</b><br/>• UI Styling: <b>Tailwind CSS v3.4 + Framer Motion</b>"]:::api
+        D1 --> D2 --> D3
+    end
+
+    subgraph STEP5["5. Gate Check-ins & Continuous Online Learning Loop"]
+        E1["Physical Gate Turnstiles / QR Scanners<br/>• Devotee Scans E-Pass at Entry/Exit<br/>• Gate Counter Delta Triggered (+1 / -1)"]:::nodeStyle
+        E2["Continuous Learning ML Feedback Loop<br/>• Influx Discrepancy ε(t) = Actual - Predicted<br/>• Nightly Online Retraining & Weight Tuning"]:::nodeStyle
+        E3["Languages & APIs Used:<br/>• Backend: <b>Node.js / Python FastAPI</b><br/>• Storage: <b>PostgreSQL (pgvector / Supabase)</b><br/>• Background Sync: <b>Service Workers & Cache API</b><br/>• Online ML: <b>SGD Regressor / Online Gradient Descent</b>"]:::lang
+        E1 --> E2 --> E3
+    end
+
+    subgraph STEP6["6. PunarMilan AI (Lost Member Facial Recognition)"]
+        F1["Family Member Lost in Crowd<br/>• Devotee Uploads Photo of Missing Person"]:::nodeStyle
+        F2["Biometric Facial Vector Extraction<br/>• SSD-MobileNet Face Detection<br/>• 68 3D Facial Landmarks<br/>• 128-Dimensional Vector Descriptor"]:::nodeStyle
+        F3["Vector Search & Sighting Verification<br/>• Cosine Distance Matching against CCTV Feeds<br/>• If Matched -> Geolocation + Camera Snapshot Alert<br/>• If Not -> High-Priority Broadcast to 14,000+ CCTV Nodes"]:::nodeStyle
+        F4["Languages & APIs Used:<br/>• Language: <b>JavaScript (WebGL) / Python</b><br/>• Vision AI: <b>@vladmandic/face-api (TensorFlow.js)</b><br/>• Vector DB: <b>PostgreSQL + pgvector (Cosine Sim)</b><br/>• Cloud Media: <b>Cloudflare R2 / AWS S3 API (@aws-sdk/client-s3)</b>"]:::api
+        F1 --> F2 --> F3 --> F4
+    end
+
+    %% INTER-STAGE CONNECTIONS
+    A3 -->|Macro Baseline Prediction| D1
+    B3 -->|Upcoming Booked Devotee Queue| D1
+    D2 -->|Live Recommendations to App| C1
+    E3 -->|Everyday Scans Retrain AI| A2
+        </pre>
+      </div>
+    </section>
+
+    <!-- STEP-BY-STEP DETAILED PIPELINE CARDS -->
+    <section class="space-y-6">
+      <div class="flex items-center gap-2 text-cyan-400 font-mono text-xs font-bold uppercase tracking-wider">
+        <i data-lucide="layers" class="w-4 h-4"></i>
+        <span>6-Stage Deep Dive: Tech Stack & API Matrix</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- CARD 1 -->
+        <div class="p-6 rounded-3xl cyber-glass border border-cyan-500/20 hover:border-cyan-400/50 transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold bg-cyan-950 text-cyan-400 px-2.5 py-1 rounded-lg border border-cyan-500/30">STAGE 01</span>
+              <i data-lucide="database" class="w-5 h-5 text-cyan-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">Historical Data & Macro ML Training</h3>
+            <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+              Ingests 40-year ground truth footfall dataset (1986–2026) alongside diurnal 24-hr Gaussian probability curves for Aarti influx peaks.
+            </p>
+          </div>
+          <div class="space-y-2 pt-3 border-t border-cyan-500/15 text-xs font-mono">
+            <div class="text-cyan-300"><strong>Languages:</strong> Python 3.11, JavaScript (ESM)</div>
+            <div class="text-amber-300"><strong>APIs & Libs:</strong> NumPy, Pandas, Scikit-Learn, IndexedDB</div>
+            <div class="text-slate-400 text-[11px]"><strong>Key File:</strong> <code>src/data/historicalCrowdData.js</code></div>
+          </div>
+        </div>
+
+        <!-- CARD 2 -->
+        <div class="p-6 rounded-3xl cyber-glass border border-cyan-500/20 hover:border-cyan-400/50 transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold bg-cyan-950 text-cyan-400 px-2.5 py-1 rounded-lg border border-cyan-500/30">STAGE 02</span>
+              <i data-lucide="qr-code" class="w-5 h-5 text-cyan-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">QR E-Pass & Family Slot Booking</h3>
+            <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+              Devotees reserve time slots and link family members into encrypted mesh nodes. Generates tamper-proof QR tokens with HMAC-SHA256 signatures.
+            </p>
+          </div>
+          <div class="space-y-2 pt-3 border-t border-cyan-500/15 text-xs font-mono">
+            <div class="text-cyan-300"><strong>Languages:</strong> JavaScript (React 19), SQL</div>
+            <div class="text-amber-300"><strong>APIs & Libs:</strong> Canvas API, Web Crypto API, Supabase REST</div>
+            <div class="text-slate-400 text-[11px]"><strong>Key File:</strong> <code>src/services/passService.js</code></div>
+          </div>
+        </div>
+
+        <!-- CARD 3 -->
+        <div class="p-6 rounded-3xl cyber-glass border border-cyan-500/20 hover:border-cyan-400/50 transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold bg-cyan-950 text-cyan-400 px-2.5 py-1 rounded-lg border border-cyan-500/30">STAGE 03</span>
+              <i data-lucide="radio" class="w-5 h-5 text-cyan-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">P2P Mesh & UWB Precision Radar</h3>
+            <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+              Decentralized peer-to-peer tracking using WebRTC. Hardware GPS, compass azimuth, battery telemetry, and synthesized acoustic chime beacons.
+            </p>
+          </div>
+          <div class="space-y-2 pt-3 border-t border-cyan-500/15 text-xs font-mono">
+            <div class="text-cyan-300"><strong>Languages:</strong> JavaScript (Browser Hardware APIs)</div>
+            <div class="text-amber-300"><strong>APIs & Libs:</strong> Geolocation API, Web Audio, PeerJS, Leaflet</div>
+            <div class="text-slate-400 text-[11px]"><strong>Key File:</strong> <code>src/services/geoService.js</code></div>
+          </div>
+        </div>
+
+        <!-- CARD 4 -->
+        <div class="p-6 rounded-3xl cyber-glass border border-cyan-500/20 hover:border-cyan-400/50 transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold bg-cyan-950 text-cyan-400 px-2.5 py-1 rounded-lg border border-cyan-500/30">STAGE 04</span>
+              <i data-lucide="trending-up" class="w-5 h-5 text-cyan-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">Live Influx, Wait Times & AI Routing</h3>
+            <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+              Calculates gate occupancy rates and waiting times via Little's Law. Proactively prompts devotees to less crowded gates before bottlenecks form.
+            </p>
+          </div>
+          <div class="space-y-2 pt-3 border-t border-cyan-500/15 text-xs font-mono">
+            <div class="text-cyan-300"><strong>Languages:</strong> Node.js v20, JavaScript</div>
+            <div class="text-amber-300"><strong>APIs & Libs:</strong> WebSocket (<code>ws</code>), React Context API</div>
+            <div class="text-slate-400 text-[11px]"><strong>Key File:</strong> <code>src/services/crowdEngine.js</code></div>
+          </div>
+        </div>
+
+        <!-- CARD 5 -->
+        <div class="p-6 rounded-3xl cyber-glass border border-cyan-500/20 hover:border-cyan-400/50 transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold bg-cyan-950 text-cyan-400 px-2.5 py-1 rounded-lg border border-cyan-500/30">STAGE 05</span>
+              <i data-lucide="refresh-cw" class="w-5 h-5 text-cyan-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">Daily Scans & Online Learning Loop</h3>
+            <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+              Physical turnstile scans log discrepancies between actual vs predicted counts. Daily SGD online learning re-tunes gate bias weights continuously.
+            </p>
+          </div>
+          <div class="space-y-2 pt-3 border-t border-cyan-500/15 text-xs font-mono">
+            <div class="text-cyan-300"><strong>Languages:</strong> Node.js, Python FastAPI, SQL</div>
+            <div class="text-amber-300"><strong>APIs & Libs:</strong> Service Worker Cache, SGD Regressor, Supabase</div>
+            <div class="text-slate-400 text-[11px]"><strong>Key File:</strong> <code>src/services/crowdEngine.js</code></div>
+          </div>
+        </div>
+
+        <!-- CARD 6 -->
+        <div class="p-6 rounded-3xl cyber-glass border border-cyan-500/20 hover:border-cyan-400/50 transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold bg-cyan-950 text-cyan-400 px-2.5 py-1 rounded-lg border border-cyan-500/30">STAGE 06</span>
+              <i data-lucide="scan-face" class="w-5 h-5 text-cyan-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">PunarMilan AI Facial Biometrics</h3>
+            <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+              Locates lost members in crowds by extracting 68 facial landmarks & 128-d vector embeddings, matched via cosine similarity against 14,000+ CCTV nodes.
+            </p>
+          </div>
+          <div class="space-y-2 pt-3 border-t border-cyan-500/15 text-xs font-mono">
+            <div class="text-cyan-300"><strong>Languages:</strong> JavaScript (WebGL), Python</div>
+            <div class="text-amber-300"><strong>APIs & Libs:</strong> @vladmandic/face-api, pgvector, AWS S3 / R2 SDK</div>
+            <div class="text-slate-400 text-[11px]"><strong>Key File:</strong> <code>src/services/aiFaceEngine.js</code></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MATHEMATICAL FORMULATIONS -->
+    <section class="p-6 sm:p-8 rounded-3xl cyber-glass border border-cyan-500/20 space-y-6">
+      <div class="flex items-center gap-2 text-cyan-400 font-mono text-xs font-bold uppercase tracking-wider">
+        <i data-lucide="calculator" class="w-4 h-4"></i>
+        <span>Core Mathematical & Algorithmic Models</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-mono">
+        <!-- FORMULA 1 -->
+        <div class="p-4 rounded-2xl bg-black/50 border border-cyan-500/20 space-y-2">
+          <span class="text-cyan-400 font-bold block">1. Little's Law (Wait Time)</span>
+          <p class="text-white text-sm">$$W_g(t) = \frac{N_g(t) + \lambda_{\text{booked}}(t)}{\mu_g(t)}$$</p>
+          <p class="text-slate-400 text-[11px]">Where \(N_g\) is in-bounds count, \(\lambda\) is upcoming booked influx, and \(\mu_g\) is turnstile clearance rate per minute.</p>
+        </div>
+
+        <!-- FORMULA 2 -->
+        <div class="p-4 rounded-2xl bg-black/50 border border-amber-500/20 space-y-2">
+          <span class="text-amber-400 font-bold block">2. Facial Vector Cosine Similarity</span>
+          <p class="text-white text-sm">$$\text{Sim}(A, B) = \frac{A \cdot B}{\|A\|_2 \|B\|_2} \ge 0.88$$</p>
+          <p class="text-slate-400 text-[11px]">Calculates 128-dimensional euclidean angular similarity between missing person photo and CCTV frame embeddings.</p>
+        </div>
+
+        <!-- FORMULA 3 -->
+        <div class="p-4 rounded-2xl bg-black/50 border border-emerald-500/20 space-y-2">
+          <span class="text-emerald-400 font-bold block">3. Online SGD Continuous Learning</span>
+          <p class="text-white text-sm">$$w(t+1) = w(t) - \eta \nabla \mathcal{L}(\epsilon(t))$$</p>
+          <p class="text-slate-400 text-[11px]">Where \(\epsilon(t) = \text{Actual Influx} - \text{Predicted Influx}\), dynamically tuning daily gate bias weights.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="mt-16 text-center text-xs font-mono text-slate-500">
+    <p>TirthSaathi System Architecture • Built with React 19, WebRTC, TensorFlow.js, and WebSocket Mesh</p>
+  </footer>
+
+  <!-- Initialize Lucide Icons & Mermaid -->
+  <script>
+    lucide.createIcons();
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#030814',
+        primaryColor: '#071830',
+        primaryBorderColor: '#00F0FF',
+        primaryTextColor: '#FFFFFF',
+        lineColor: '#00F0FF',
+        secondaryColor: '#0B2245',
+        tertiaryColor: '#040E1E'
+      }
+    });
+  </script>
+</body>
+</html>

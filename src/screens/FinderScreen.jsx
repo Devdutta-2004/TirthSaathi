@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useYatra } from '../context/YatraContext';
 import { calculateHaversineDistance, calculateCompassBearing } from '../services/geoService';
 import { LiveGPSMap } from '../components/map/LiveGPSMap';
 import {
-  Users, QrCode, Share2, Copy, Check, MapPin, Bell, Phone, Navigation,
-  RefreshCw, Battery, Wifi, Shield, Clock, UserPlus, Compass, AlertCircle,
-  Sparkles, Radio, Eye, X, ChevronDown, Volume2, Locate, ArrowUp, Scan
+  Users, Share2, Copy, Check, MapPin, Bell, Navigation,
+  Battery, Wifi, Shield, UserPlus, Compass, AlertCircle,
+  Sparkles, Radio, X, ChevronDown, Volume2, Locate, ArrowUp, Scan,
+  Activity, Cpu, Target, Layers, Zap, Crosshair, Signal, Eye
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
-   APPLE AIRTAG–INSPIRED PRECISION FINDER SCREEN
+   ULTRA-FUTURISTIC CYBERNETIC FAMILY FINDER HUD
    ═══════════════════════════════════════════════════════════ */
 
 export const FinderScreen = () => {
@@ -27,16 +28,16 @@ export const FinderScreen = () => {
   const [groupNameInput, setGroupNameInput] = useState('');
   const [yourNameInput, setYourNameInput] = useState('');
   const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [beaconPinging, setBeaconPinging] = useState(false);
 
   // Precision finder animation state
   const [pulsePhase, setPulsePhase] = useState(0);
-  const animFrameRef = useRef(null);
 
   // Animate pulse phase for the precision radar
   useEffect(() => {
     let frame;
     const tick = () => {
-      setPulsePhase(p => (p + 0.02) % (Math.PI * 2));
+      setPulsePhase(p => (p + 0.025) % (Math.PI * 2));
       frame = requestAnimationFrame(tick);
     };
     if (view === 'precision' && selectedMember) {
@@ -47,7 +48,7 @@ export const FinderScreen = () => {
 
   const handleCopyCode = () => {
     setCopied(true);
-    addToast('Circle Code Copied', `Share code ${familyGroup.groupCode} with family.`, 'success');
+    addToast('Quantum Circle Key Copied', `Secure access code ${familyGroup.groupCode} copied to clipboard.`, 'success');
     navigator.clipboard && navigator.clipboard.writeText(familyGroup.groupCode);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -63,11 +64,11 @@ export const FinderScreen = () => {
   };
 
   const getProximityLabel = (dist) => {
-    if (dist <= 3) return { text: 'Here', color: '#34D399', bg: 'rgba(52,211,153,0.15)' };
-    if (dist <= 10) return { text: 'Very Close', color: '#34D399', bg: 'rgba(52,211,153,0.12)' };
-    if (dist <= 30) return { text: 'Nearby', color: '#60A5FA', bg: 'rgba(96,165,250,0.12)' };
-    if (dist <= 100) return { text: 'Within Range', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' };
-    return { text: 'Far', color: '#EF4444', bg: 'rgba(239,68,68,0.1)' };
+    if (dist <= 3) return { text: 'TARGET LOCKED (HERE)', color: '#10B981', border: 'rgba(16,185,129,0.4)', bg: 'rgba(16,185,129,0.12)' };
+    if (dist <= 10) return { text: 'ULTRA-CLOSE PROXIMITY', color: '#00F0FF', border: 'rgba(0,240,255,0.4)', bg: 'rgba(0,240,255,0.12)' };
+    if (dist <= 30) return { text: 'UWB NEARBY ZONE', color: '#3B82F6', border: 'rgba(59,130,246,0.4)', bg: 'rgba(59,130,246,0.12)' };
+    if (dist <= 100) return { text: 'PERIMETER IN RANGE', color: '#F59E0B', border: 'rgba(245,158,11,0.4)', bg: 'rgba(245,158,11,0.12)' };
+    return { text: 'LONG RANGE SEPARATION', color: '#EF4444', border: 'rgba(239,68,68,0.4)', bg: 'rgba(239,68,68,0.1)' };
   };
 
   const handleCreateGroupSubmit = (e) => {
@@ -91,64 +92,124 @@ export const FinderScreen = () => {
     setView('precision');
   };
 
+  const handleTriggerBeaconAction = (member) => {
+    setBeaconPinging(true);
+    triggerBeacon(member);
+    setTimeout(() => setBeaconPinging(false), 2000);
+  };
+
   /* ─────────────────────────────────────────────
-     PEOPLE LIST VIEW (AirTag Items List Style)
+     1. TACTICAL HUD VIEW (Overview & Roster)
   ──────────────────────────────────────────── */
   const renderPeopleList = () => (
     <div className="space-y-4 animate-fadeIn">
-      {/* PunarMilan AI Facial Finder Quick Banner */}
-      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-gold-500/15 via-gold-500/10 to-amber-500/15 border border-gold-500/30 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gold-500 text-navy-950 flex items-center justify-center font-bold text-xs shadow-xs">
-            <Scan className="w-4 h-4" />
+      {/* ── TOP TELEMETRY STRIP ── */}
+      <div className="p-3.5 rounded-2xl glass-cyber-panel border border-cyan-500/30 flex flex-wrap items-center justify-between gap-3 relative overflow-hidden">
+        {/* Glowing background scanline */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/5 to-transparent pointer-events-none animate-scanline" />
+        
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-sm relative">
+            <Radio className="w-5 h-5 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping absolute -top-0.5 -right-0.5" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-navy-900">PunarMilan AI (Lost Member Face Match)</h4>
-            <p className="text-[11px] text-slate-600">Scan photo across 14,000+ temple CCTV checkpoints</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400 uppercase bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
+                UWB MESH ONLINE
+              </span>
+              <span className="text-[11px] font-mono text-slate-400">
+                FREQ: 7.98 GHz (CH-9)
+              </span>
+            </div>
+            <h2 className="text-sm font-bold text-white tracking-wide mt-0.5">
+              {familyGroup.name || 'Quantum Family Circle'}
+            </h2>
           </div>
         </div>
+
+        <div className="flex items-center gap-2">
+          {/* Key Code */}
+          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 px-2.5 py-1.5 rounded-xl text-xs font-mono text-cyan-300">
+            <Shield className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{familyGroup.groupCode}</span>
+          </div>
+
+          <button
+            onClick={handleCopyCode}
+            className="p-2 rounded-xl bg-white/5 hover:bg-cyan-500/20 border border-white/10 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 transition-colors"
+            title="Copy Encrypted Circle Key"
+          >
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+          </button>
+
+          <button
+            onClick={() => setShowJoinModal(true)}
+            className="p-2 rounded-xl bg-white/5 hover:bg-cyan-500/20 border border-white/10 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 transition-colors"
+            title="Join Circle Code"
+          >
+            <UserPlus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── PUNARMILAN AI BIOMETRIC SCANNER BANNER ── */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-gold-500/10 to-cyan-500/10 border border-gold-500/40 relative overflow-hidden backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-400 flex items-center justify-center font-bold text-xs shadow-glow">
+              <Scan className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider font-mono">
+                  PunarMilan AI Neural Facial Link
+                </h4>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Active scan across 14,000+ CCTV nodes & pilgrims for missing family
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setCurrentScreen('punarmilan')}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-gold-500 hover:from-amber-400 hover:to-gold-400 text-navy-950 font-bold text-xs flex-shrink-0 transition-all shadow-md active:scale-95 flex items-center gap-1.5 font-mono"
+          >
+            <Cpu className="w-3.5 h-3.5" />
+            <span>AI SCAN</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── VIEW SWITCHER TABS ── */}
+      <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md">
         <button
-          onClick={() => setCurrentScreen('punarmilan')}
-          className="px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs flex-shrink-0 transition-colors"
+          onClick={() => setView('people')}
+          className={`py-2 px-4 rounded-xl text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 ${
+            view === 'people'
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
         >
-          Open AI Scanner
+          <Target className="w-3.5 h-3.5" />
+          <span>TACTICAL NODES ({familyGroup.members.length})</span>
+        </button>
+        <button
+          onClick={() => setView('map')}
+          className={`py-2 px-4 rounded-xl text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 ${
+            view === 'map'
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <MapPin className="w-3.5 h-3.5" />
+          <span>SATELLITE GPS GRID</span>
         </button>
       </div>
 
-      {/* Header Bar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-extrabold text-navy-900 tracking-tight">
-            Family Live Radar
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-            {familyGroup.members.length} device{familyGroup.members.length > 1 ? 's' : ''} connected
-            <span className="text-slate-300">•</span>
-            <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded">{familyGroup.groupCode}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleCopyCode}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
-            title="Share Circle Code">
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5 text-slate-600" />}
-          </button>
-          <button onClick={() => setShowJoinModal(true)}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
-            title="Join Circle">
-            <UserPlus className="w-3.5 h-3.5 text-slate-600" />
-          </button>
-          <button onClick={() => setView('map')}
-            className="w-8 h-8 rounded-full bg-navy-900 hover:bg-navy-800 flex items-center justify-center transition-colors shadow-xs"
-            title="View Live GPS Map">
-            <MapPin className="w-3.5 h-3.5 text-white" />
-          </button>
-        </div>
-      </div>
-
-      {/* People Cards */}
-      <div className="space-y-2">
+      {/* ── FAMILY TELEMETRY ROSTER CARDS ── */}
+      <div className="space-y-3">
         {familyGroup.members.map((member) => {
           const distance = getLiveDistance(member);
           const bearing = getLiveBearing(member);
@@ -156,82 +217,150 @@ export const FinderScreen = () => {
           const isThisDevice = distance === 0;
 
           return (
-            <button
+            <div
               key={member.deviceId || member.id}
               onClick={() => !isThisDevice && openPrecisionFinder(member)}
-              className="w-full text-left bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.98] group"
+              className={`w-full text-left rounded-2xl p-4 transition-all glass-cyber-card border relative overflow-hidden group ${
+                isThisDevice
+                  ? 'border-cyan-500/30'
+                  : 'cursor-pointer hover:border-cyan-400/60 active:scale-[0.99]'
+              }`}
             >
-              <div className="flex items-center gap-3.5">
-                {/* Avatar with status ring */}
+              {/* Corner Sci-Fi Accents */}
+              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-400/60" />
+              <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan-400/60" />
+              <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-400/60" />
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-400/60" />
+
+              <div className="flex items-center gap-4">
+                {/* Holographic Avatar Frame with Image */}
                 <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center text-2xl border-2 border-white shadow-sm">
-                    {member.avatar || '👤'}
+                  <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-cyan-500/50 p-0.5 bg-black/60 shadow-lg group-hover:border-cyan-400 transition-colors">
+                    <img
+                      src={member.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
+                      alt={member.name}
+                      className="w-full h-full object-cover rounded-xl filter contrast-105"
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
+                      }}
+                    />
                   </div>
-                  <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white ${
-                    member.isOnline || isThisDevice ? 'bg-emerald-400' : 'bg-slate-300'
-                  }`} />
+
+                  {/* Status Indicator Pip */}
+                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-navy-950 flex items-center justify-center ${
+                    member.isOnline || isThisDevice ? 'bg-emerald-400' : 'bg-slate-400'
+                  }`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                  </div>
                 </div>
 
-                {/* Info */}
+                {/* Member Telemetry & Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-[15px] text-navy-900 truncate">
-                      {member.name}{isThisDevice ? ' (You)' : ''}
-                    </h3>
-                    {isThisDevice && (
-                      <span className="text-[10px] font-medium bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">This Device</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-[15px] text-white truncate tracking-wide">
+                        {member.name}
+                      </h3>
+                      {isThisDevice ? (
+                        <span className="text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-1.5 py-0.5 rounded">
+                          HOST NODE
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {member.role || 'Node'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Proximity Status Pill */}
+                    {!isThisDevice && (
+                      <span
+                        className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border"
+                        style={{
+                          color: proximity.color,
+                          borderColor: proximity.border,
+                          backgroundColor: proximity.bg
+                        }}
+                      >
+                        {proximity.text}
+                      </span>
                     )}
                   </div>
-                  <p className="text-[13px] text-slate-500 mt-0.5">
+
+                  {/* Telemetry row */}
+                  <div className="flex flex-wrap items-center gap-3 mt-2 text-xs font-mono text-slate-400">
                     {isThisDevice ? (
-                      <span className="flex items-center gap-1">
-                        <Locate className="w-3 h-3" /> GPS active · ±{myAccuracy}m
+                      <span className="flex items-center gap-1 text-cyan-300">
+                        <Locate className="w-3.5 h-3.5 text-cyan-400 animate-pulse" /> GPS FIX: ±{myAccuracy}m
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1.5">
-                        <span style={{ color: proximity.color }}>●</span>
-                        {proximity.text}
-                        <span className="text-slate-300">·</span>
-                        <span className="font-mono text-xs">{distance >= 1000 ? `${(distance/1000).toFixed(1)}km` : `${distance}m`}</span>
-                        <span className="text-slate-300">·</span>
-                        <span className="font-mono text-xs">{bearing}°</span>
-                      </span>
+                      <>
+                        <span className="text-white font-bold text-sm">
+                          {distance >= 1000 ? `${(distance/1000).toFixed(1)} km` : `${distance} m`}
+                        </span>
+                        <span className="text-slate-600">|</span>
+                        <span className="flex items-center gap-1 text-slate-300">
+                          <Compass className="w-3.5 h-3.5 text-cyan-400" /> {bearing}°
+                        </span>
+                        <span className="text-slate-600">|</span>
+                        <span className="text-slate-400">
+                          {member.uwbChannel || 'UWB CH-9'}
+                        </span>
+                      </>
                     )}
-                  </p>
+
+                    {/* Battery indicator */}
+                    <span className="flex items-center gap-1 ml-auto text-emerald-400">
+                      <Battery className="w-3.5 h-3.5" />
+                      <span>{isThisDevice ? myBattery : (member.battery || 88)}%</span>
+                    </span>
+                  </div>
                 </div>
 
-                {/* Right Side */}
+                {/* Right Action Icons */}
                 {!isThisDevice && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
-                      onClick={(e) => { e.stopPropagation(); triggerBeacon(member); }}
-                      className="w-9 h-9 rounded-full bg-amber-50 hover:bg-amber-100 flex items-center justify-center transition-colors"
-                      title="Play Sound"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTriggerBeaconAction(member);
+                      }}
+                      className="w-9 h-9 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 flex items-center justify-center transition-colors"
+                      title="Emit Sonic Audio Beacon"
                     >
-                      <Volume2 className="w-4 h-4 text-amber-600" />
+                      <Volume2 className={`w-4 h-4 ${beaconPinging ? 'animate-bounce text-amber-200' : ''}`} />
                     </button>
-                    <ChevronDown className="w-4 h-4 text-slate-400 -rotate-90 group-hover:text-slate-600 transition-colors" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPrecisionFinder(member);
+                      }}
+                      className="w-9 h-9 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-500/40 text-cyan-300 flex items-center justify-center transition-colors shadow-glow"
+                      title="Engage Precision Radar"
+                    >
+                      <Crosshair className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
 
-      {/* Add Person CTA */}
+      {/* ── CREATE NEW CIRCLE CTA ── */}
       <button
         onClick={() => setShowCreateModal(true)}
-        className="w-full py-3.5 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-sm font-semibold text-slate-400 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
+        className="w-full py-4 rounded-2xl border-2 border-dashed border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/10 text-xs font-mono font-bold text-cyan-300 transition-all flex items-center justify-center gap-2 group backdrop-blur-sm"
       >
-        <UserPlus className="w-4 h-4" />
-        Create New Family Circle
+        <Zap className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+        <span>INITIALIZE NEW QUANTUM FAMILY CIRCLE</span>
       </button>
     </div>
   );
 
   /* ─────────────────────────────────────────────
-     PRECISION FINDER VIEW (AirTag Radar Style)
+     2. HOLOGRAPHIC PRECISION RADAR (LiDAR HUD)
   ──────────────────────────────────────────── */
   const renderPrecisionFinder = () => {
     if (!selectedMember) return null;
@@ -240,151 +369,198 @@ export const FinderScreen = () => {
     const bearing = getLiveBearing(selectedMember);
     const proximity = getProximityLabel(distance);
 
-    // Dynamic ring sizes based on distance
-    const maxRings = 4;
-    const pulseScale = 0.97 + Math.sin(pulsePhase) * 0.03;
+    // Dynamic ring sizes and audio pulses
+    const maxRings = 5;
+    const pulseScale = 0.96 + Math.sin(pulsePhase) * 0.04;
 
-    // Arrow rotation: bearing relative to device heading
+    // Relative arrow rotation: target bearing minus device heading
     const arrowDeg = bearing - myHeading;
 
-    // Color gradient based on distance
-    const getGradient = () => {
-      if (distance <= 5) return 'from-emerald-400 via-emerald-300 to-teal-400';
-      if (distance <= 20) return 'from-emerald-400 via-green-400 to-cyan-400';
-      if (distance <= 50) return 'from-cyan-400 via-blue-400 to-blue-500';
-      if (distance <= 150) return 'from-blue-400 via-indigo-400 to-purple-400';
-      return 'from-orange-400 via-red-400 to-pink-400';
-    };
-
-    // Background hue shift
-    const getBg = () => {
-      if (distance <= 5) return 'bg-[#0B1A14]';
-      if (distance <= 20) return 'bg-[#0B1818]';
-      if (distance <= 50) return 'bg-[#0B1520]';
-      if (distance <= 150) return 'bg-[#0F1328]';
-      return 'bg-[#1A0F14]';
-    };
-
     return (
-      <div className={`fixed inset-0 z-50 ${getBg()} flex flex-col items-center justify-between overflow-hidden transition-colors duration-1000`}
-        style={{ paddingTop: 'env(safe-area-inset-top, 20px)', paddingBottom: 'env(safe-area-inset-bottom, 20px)' }}>
+      <div
+        className="fixed inset-0 z-50 bg-[#030814] flex flex-col items-center justify-between overflow-hidden select-none"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 24px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 24px)'
+        }}
+      >
+        {/* Holographic Background Grid & Radial Scan */}
+        <div className="absolute inset-0 bg-cyber-grid pointer-events-none opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-cyan-500/10 pointer-events-none" />
 
-        {/* ── Top Bar ── */}
+        {/* ── TOP HUD BAR ── */}
         <div className="w-full px-5 pt-3 pb-2 flex items-center justify-between z-20">
-          <button onClick={() => { setView('people'); setSelectedMember(null); }}
-            className="text-white/80 hover:text-white text-sm font-medium flex items-center gap-1 transition-colors">
-            <ChevronDown className="w-5 h-5 rotate-90" /> Back
+          <button
+            onClick={() => { setView('people'); setSelectedMember(null); }}
+            className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/15 hover:border-cyan-400 text-cyan-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all backdrop-blur-md"
+          >
+            <ChevronDown className="w-4 h-4 rotate-90" />
+            <span>DISENGAGE</span>
           </button>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-white/60 text-xs font-medium">Live</span>
+
+          <div className="flex items-center gap-2 font-mono text-[11px] bg-cyan-950/80 border border-cyan-500/40 px-3 py-1 rounded-full text-cyan-300 shadow-glow">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <span>UWB TARGET LOCK: ACTIVE</span>
           </div>
         </div>
 
-        {/* ── Member Info ── */}
-        <div className="text-center z-20 -mt-2">
-          <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg">
-            {selectedMember.avatar || '👤'}
+        {/* ── TARGET PROFILE CARD ── */}
+        <div className="text-center z-20 flex flex-col items-center -mt-2">
+          {/* Target Portrait with Holographic Hex Frame */}
+          <div className="relative mb-2">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-cyan-400 shadow-glow p-1 bg-black/60 relative">
+              <img
+                src={selectedMember.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80'}
+                alt={selectedMember.name}
+                className="w-full h-full object-cover rounded-xl"
+              />
+              {/* Scanline overlay across photo */}
+              <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/20 via-transparent to-cyan-400/20 pointer-events-none" />
+            </div>
+
+            {/* Target Reticle Accents */}
+            <div className="absolute -top-1.5 -left-1.5 w-4 h-4 border-t-2 border-l-2 border-cyan-400" />
+            <div className="absolute -top-1.5 -right-1.5 w-4 h-4 border-t-2 border-r-2 border-cyan-400" />
+            <div className="absolute -bottom-1.5 -left-1.5 w-4 h-4 border-b-2 border-l-2 border-cyan-400" />
+            <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-2 border-r-2 border-cyan-400" />
           </div>
-          <h2 className="text-white text-xl font-bold tracking-tight">{selectedMember.name}</h2>
-          <p className="text-white/50 text-xs font-medium mt-0.5">{selectedMember.role || 'Family Member'}</p>
+
+          <h2 className="text-white text-lg font-extrabold tracking-wide font-display">
+            {selectedMember.name}
+          </h2>
+          <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono text-cyan-400">
+            <span>{selectedMember.role || 'Family Member'}</span>
+            <span>•</span>
+            <span>{selectedMember.uwbChannel || 'UWB CH-9'}</span>
+          </div>
         </div>
 
-        {/* ── Giant Precision Radar ── */}
+        {/* ── GIANT HOLOGRAPHIC RADAR SCANNER ── */}
         <div className="flex-1 flex items-center justify-center w-full relative">
-          {/* Concentric pulse rings */}
-          <div className="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center" style={{ transform: `scale(${pulseScale})` }}>
+          {/* Radar Container */}
+          <div
+            className="relative w-80 h-80 sm:w-96 sm:h-96 flex items-center justify-center"
+            style={{ transform: `scale(${pulseScale})` }}
+          >
+            {/* Rotating Radar Sweep Beam */}
+            <div className="absolute inset-0 rounded-full pointer-events-none animate-radar-sweep opacity-75">
+              <div
+                className="w-full h-full rounded-full"
+                style={{
+                  background: 'conic-gradient(from 0deg, rgba(0,240,255,0.35) 0deg, rgba(0,240,255,0.05) 45deg, transparent 90deg)'
+                }}
+              />
+            </div>
+
+            {/* Concentric Distance Range Rings */}
             {[...Array(maxRings)].map((_, i) => {
-              const size = 100 + i * 55;
-              const opacity = 0.08 + (maxRings - i) * 0.04;
-              const delay = i * 0.3;
+              const size = 110 + i * 55;
+              const ringOpacity = 0.15 + (maxRings - i) * 0.08;
               return (
                 <div
                   key={i}
-                  className={`absolute rounded-full border bg-gradient-to-br ${getGradient()}`}
+                  className="absolute rounded-full border border-cyan-500/40 pointer-events-none transition-all duration-300"
                   style={{
-                    width: size, height: size,
-                    borderColor: `rgba(255,255,255,${opacity})`,
-                    opacity: opacity + Math.sin(pulsePhase + i * 0.8) * 0.03,
-                    background: `radial-gradient(circle, rgba(255,255,255,${0.02 + (maxRings - i)*0.01}) 0%, transparent 70%)`,
-                    transition: 'opacity 0.3s ease'
+                    width: size,
+                    height: size,
+                    borderColor: i === 0 ? 'rgba(0,240,255,0.7)' : `rgba(0,240,255,${ringOpacity})`,
+                    boxShadow: i === 0 ? '0 0 25px rgba(0,240,255,0.25)' : 'none'
                   }}
                 />
               );
             })}
 
-            {/* Center: Directional Arrow */}
-            <div className="absolute z-10 flex flex-col items-center">
-              {distance > 5 ? (
+            {/* Crosshair Axes */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+              <div className="w-full h-px bg-cyan-400" />
+              <div className="h-full w-px bg-cyan-400 absolute" />
+            </div>
+
+            {/* Directional Holographic Arrow Reticle */}
+            <div className="absolute z-20 flex flex-col items-center">
+              {distance > 3 ? (
                 <div
                   className="transition-transform duration-300 ease-out"
                   style={{ transform: `rotate(${arrowDeg}deg)` }}
                 >
-                  <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getGradient()} flex items-center justify-center shadow-2xl`}
-                    style={{ boxShadow: `0 0 60px 15px ${proximity.color}33` }}>
-                    <ArrowUp className="w-10 h-10 text-white drop-shadow-lg" strokeWidth={2.5} />
+                  <div
+                    className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-glow-blue border border-cyan-300"
+                    style={{
+                      boxShadow: '0 0 50px rgba(0,240,255,0.6), inset 0 0 20px rgba(255,255,255,0.5)'
+                    }}
+                  >
+                    <ArrowUp className="w-12 h-12 text-white drop-shadow-md" strokeWidth={3} />
                   </div>
                 </div>
               ) : (
-                // "Here" checkmark when very close
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center shadow-2xl animate-pulse"
-                  style={{ boxShadow: '0 0 80px 20px rgba(52,211,153,0.3)' }}>
-                  <Check className="w-12 h-12 text-white" strokeWidth={3} />
+                /* "HERE" Target Lock state */
+                <div
+                  className="w-28 h-28 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-glow animate-neon-cyan border-2 border-emerald-200"
+                  style={{
+                    boxShadow: '0 0 60px rgba(16,185,129,0.8)'
+                  }}
+                >
+                  <Check className="w-14 h-14 text-white" strokeWidth={3.5} />
                 </div>
               )}
             </div>
           </div>
 
-          {/* Ambient glow */}
-          <div className="absolute inset-0 pointer-events-none"
+          {/* Ambient Glow */}
+          <div
+            className="absolute inset-0 pointer-events-none"
             style={{
-              background: `radial-gradient(circle at 50% 50%, ${proximity.color}15 0%, transparent 60%)`
-            }} />
+              background: `radial-gradient(circle at 50% 50%, ${proximity.color}20 0%, transparent 65%)`
+            }}
+          />
         </div>
 
-        {/* ── Distance Display ── */}
+        {/* ── DISTANCE TELEMETRY GAUGE ── */}
         <div className="text-center z-20 mb-2">
-          <div className="inline-flex items-baseline gap-1">
-            <span className="text-6xl font-black text-white tracking-tight tabular-nums" style={{ fontFamily: "'SF Pro Display', 'Plus Jakarta Sans', system-ui" }}>
+          <div className="inline-flex items-baseline gap-2 font-mono">
+            <span className="text-6xl sm:text-7xl font-black text-neon-cyan tracking-tight tabular-nums">
               {distance >= 1000 ? (distance / 1000).toFixed(1) : distance}
             </span>
-            <span className="text-2xl font-semibold text-white/60">
+            <span className="text-2xl font-bold text-cyan-300">
               {distance >= 1000 ? 'km' : 'm'}
             </span>
           </div>
-          <div className="flex items-center justify-center gap-2 mt-1">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: proximity.color }} />
-            <span className="text-white/60 text-sm font-medium">{proximity.text}</span>
-            <span className="text-white/30">·</span>
-            <span className="text-white/40 text-sm font-mono">{bearing}° bearing</span>
+
+          {/* Precision Status Banner */}
+          <div className="flex items-center justify-center gap-2 mt-1 font-mono text-xs">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: proximity.color }} />
+            <span className="font-bold tracking-wider" style={{ color: proximity.color }}>
+              {proximity.text}
+            </span>
+            <span className="text-slate-500">•</span>
+            <span className="text-slate-400">{bearing}° AZIMUTH</span>
           </div>
         </div>
 
-        {/* ── Bottom Action Bar ── */}
-        <div className="w-full px-5 pb-4 space-y-2.5 z-20">
-          {/* Play Sound */}
+        {/* ── BOTTOM TACTICAL ACTION BAR ── */}
+        <div className="w-full px-5 pb-4 space-y-2.5 z-20 max-w-md">
+          {/* Sonic Beacon Button */}
           <button
-            onClick={() => triggerBeacon(selectedMember)}
-            className="w-full py-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 text-white text-sm font-semibold transition-all flex items-center justify-center gap-2.5 active:scale-[0.97]"
+            onClick={() => handleTriggerBeaconAction(selectedMember)}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-gold-500/20 hover:from-amber-500/30 hover:to-gold-500/30 border border-amber-400/50 text-amber-300 text-xs font-mono font-bold transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-md"
           >
-            <Volume2 className="w-5 h-5" />
-            Play Sacred Chime on Their Phone
+            <Volume2 className={`w-4 h-4 ${beaconPinging ? 'animate-bounce text-amber-200' : ''}`} />
+            <span>DISPATCH HIGH-FREQUENCY SACRED CHIME BEACON</span>
           </button>
 
-          {/* Navigate on Map */}
+          {/* Switch to Satellite Map */}
           <button
             onClick={() => setView('map')}
-            className="w-full py-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 text-white text-sm font-semibold transition-all flex items-center justify-center gap-2.5 active:scale-[0.97]"
+            className="w-full py-3.5 rounded-2xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-xs font-mono font-bold transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-glow"
           >
-            <Navigation className="w-5 h-5" />
-            View on Live Map
+            <MapPin className="w-4 h-4" />
+            <span>OVERLAY SATELLITE GPS MAP</span>
           </button>
 
-          {/* GPS Coordinates */}
-          <div className="flex items-center justify-center gap-3 text-[11px] text-white/30 font-mono pt-1">
-            <span>Their GPS: {selectedMember.coords?.lat?.toFixed(5)}, {selectedMember.coords?.lng?.toFixed(5)}</span>
-            <span>·</span>
-            <span>±{selectedMember.accuracy || myAccuracy}m</span>
+          {/* Micro Telemetry Footer */}
+          <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono px-2 pt-1">
+            <span>COORDS: {selectedMember.coords?.lat?.toFixed(4)}, {selectedMember.coords?.lng?.toFixed(4)}</span>
+            <span>UWB RES: ±0.3m</span>
           </div>
         </div>
       </div>
@@ -392,25 +568,29 @@ export const FinderScreen = () => {
   };
 
   /* ─────────────────────────────────────────────
-     MAP VIEW (Full-Screen OpenStreetMap)
+     3. SATELLITE ORBITAL MAP VIEW
   ──────────────────────────────────────────── */
   const renderMapView = () => (
     <div className="space-y-4 animate-fadeIn">
-      {/* Back button */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => setView('people')}
-          className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
-          <ChevronDown className="w-4 h-4 rotate-90" /> People
+      {/* Map Control Bar */}
+      <div className="flex items-center justify-between p-2 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md">
+        <button
+          onClick={() => setView('people')}
+          className="px-3 py-1.5 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors"
+        >
+          <ChevronDown className="w-4 h-4 rotate-90" />
+          <span>ROSTER VIEW</span>
         </button>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs text-slate-500 font-medium">Live GPS Stream</span>
+
+        <div className="flex items-center gap-2 font-mono text-[11px] text-cyan-300">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span>GPS RADAR STREAM ACTIVE</span>
         </div>
       </div>
 
-      {/* Map */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="h-[480px] w-full">
+      {/* Map Canvas with Cyber Frame */}
+      <div className="rounded-3xl border border-cyan-500/30 overflow-hidden shadow-2xl relative">
+        <div className="h-[460px] w-full">
           <LiveGPSMap
             myCoords={myCoords}
             myAccuracy={myAccuracy}
@@ -422,8 +602,8 @@ export const FinderScreen = () => {
         </div>
       </div>
 
-      {/* Member Quick Pills Below Map */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      {/* Quick Member Carousel with Photos */}
+      <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
         {familyGroup.members.map((m) => {
           const dist = getLiveDistance(m);
           const prox = getProximityLabel(dist);
@@ -432,17 +612,27 @@ export const FinderScreen = () => {
             <button
               key={m.deviceId || m.id}
               onClick={() => !isThis && openPrecisionFinder(m)}
-              className={`flex-shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all text-left ${
+              className={`flex-shrink-0 flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border transition-all text-left glass-cyber-card ${
                 selectedMember?.id === m.id
-                  ? 'bg-blue-50 border-blue-200'
-                  : 'bg-white border-slate-200 hover:border-slate-300'
+                  ? 'border-cyan-400 bg-cyan-950/60 shadow-glow'
+                  : 'border-white/10 hover:border-cyan-500/40'
               }`}
             >
-              <span className="text-xl">{m.avatar || '👤'}</span>
+              {/* Photo Avatar */}
+              <div className="w-8 h-8 rounded-xl overflow-hidden border border-cyan-400/50 flex-shrink-0">
+                <img
+                  src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
+                  alt={m.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
               <div>
-                <span className="text-xs font-semibold text-navy-900 block">{m.name}</span>
-                <span className="text-[10px] font-mono" style={{ color: prox.color }}>
-                  {isThis ? 'You' : `${dist}m · ${prox.text}`}
+                <span className="text-xs font-bold text-white block truncate max-w-[100px]">
+                  {m.name}
+                </span>
+                <span className="text-[10px] font-mono block" style={{ color: prox.color }}>
+                  {isThis ? 'Host Node' : `${dist}m • ${prox.text.split(' ')[0]}`}
                 </span>
               </div>
             </button>
@@ -453,7 +643,7 @@ export const FinderScreen = () => {
   );
 
   /* ═══════════════════════════════════════════
-     RENDER
+     RENDER MAIN SCREEN
   ═══════════════════════════════════════════ */
   return (
     <div className={view === 'precision' ? '' : 'max-w-2xl mx-auto p-4 sm:p-6'}>
@@ -461,63 +651,121 @@ export const FinderScreen = () => {
       {view === 'precision' && renderPrecisionFinder()}
       {view === 'map' && renderMapView()}
 
-      {/* ─── CREATE CIRCLE MODAL ─── */}
+      {/* ─── CREATE CIRCLE CYBER MODAL ─── */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <form onSubmit={handleCreateGroupSubmit}
-            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2">
-              <h3 className="text-lg font-bold text-navy-900">New Family Circle</h3>
-              <button type="button" onClick={() => setShowCreateModal(false)} className="p-1 rounded-full hover:bg-slate-100">
-                <X className="w-5 h-5 text-slate-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
+          <form
+            onSubmit={handleCreateGroupSubmit}
+            className="glass-cyber-panel rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-cyan-500/40 space-y-4 relative"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-cyan-500/20">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-base font-bold text-white font-mono uppercase tracking-wider">
+                  Create Quantum Circle
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Circle Name</label>
-              <input type="text" required placeholder="e.g. Sharma Family Yatra"
-                value={groupNameInput} onChange={(e) => setGroupNameInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" />
+              <label className="block text-xs font-mono font-bold text-cyan-300 mb-1.5 uppercase">
+                Circle Identifier Name
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Sharma Family Yatra"
+                value={groupNameInput}
+                onChange={(e) => setGroupNameInput(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-cyan-500/30 text-white text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition font-sans"
+              />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Your Name</label>
-              <input type="text" placeholder="e.g. Devdutta"
-                value={yourNameInput} onChange={(e) => setYourNameInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" />
+              <label className="block text-xs font-mono font-bold text-cyan-300 mb-1.5 uppercase">
+                Your Leader Call-sign
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Devdutta"
+                value={yourNameInput}
+                onChange={(e) => setYourNameInput(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-cyan-500/30 text-white text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition font-sans"
+              />
             </div>
-            <button type="submit"
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition-colors">
-              Create Circle
+
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-navy-950 text-xs font-mono font-bold tracking-wider uppercase shadow-glow transition-all active:scale-95"
+            >
+              INITIALIZE & ENCRYPT CIRCLE
             </button>
           </form>
         </div>
       )}
 
-      {/* ─── JOIN CIRCLE MODAL ─── */}
+      {/* ─── JOIN CIRCLE CYBER MODAL ─── */}
       {showJoinModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <form onSubmit={handleJoinGroupSubmit}
-            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2">
-              <h3 className="text-lg font-bold text-navy-900">Join Family Circle</h3>
-              <button type="button" onClick={() => setShowJoinModal(false)} className="p-1 rounded-full hover:bg-slate-100">
-                <X className="w-5 h-5 text-slate-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
+          <form
+            onSubmit={handleJoinGroupSubmit}
+            className="glass-cyber-panel rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-cyan-500/40 space-y-4 relative"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-cyan-500/20">
+              <div className="flex items-center gap-2">
+                <Radio className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-base font-bold text-white font-mono uppercase tracking-wider">
+                  Connect Node to Circle
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowJoinModal(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Circle Code</label>
-              <input type="text" required placeholder="e.g. TS-FAM-7X29A"
-                value={joinCodeInput} onChange={(e) => setJoinCodeInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-mono uppercase tracking-wider focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" />
+              <label className="block text-xs font-mono font-bold text-cyan-300 mb-1.5 uppercase">
+                Circle Cryptographic Code
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="TS-FAM-7X29A"
+                value={joinCodeInput}
+                onChange={(e) => setJoinCodeInput(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-cyan-500/30 text-cyan-300 font-mono text-sm uppercase tracking-wider focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition"
+              />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Your Name</label>
-              <input type="text" placeholder="e.g. Sunita"
-                value={yourNameInput} onChange={(e) => setYourNameInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition" />
+              <label className="block text-xs font-mono font-bold text-cyan-300 mb-1.5 uppercase">
+                Your Member Call-sign
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Sunita"
+                value={yourNameInput}
+                onChange={(e) => setYourNameInput(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-cyan-500/30 text-white text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition font-sans"
+              />
             </div>
-            <button type="submit"
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition-colors">
-              Connect Devices
+
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-navy-950 text-xs font-mono font-bold tracking-wider uppercase shadow-glow transition-all active:scale-95"
+            >
+              SYNCHRONIZE QUANTUM MESH
             </button>
           </form>
         </div>

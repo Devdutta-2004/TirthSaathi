@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialTemples } from '../services/crowdEngine';
-import { getFamilyGroup, saveFamilyGroup, createNewFamilyGroup, joinExistingFamilyGroup } from '../services/familyStore';
+import { getFamilyGroup, saveFamilyGroup, createNewFamilyGroup, joinExistingFamilyGroup, AVATAR_IMAGES } from '../services/familyStore';
 import { getStoredPasses } from '../services/passService';
 import { initOfflineSync, getOfflineQueue } from '../services/offlineSyncService';
 import { realtimeClient } from '../services/realtimeClient';
@@ -130,13 +130,14 @@ export const YatraProvider = ({ children }) => {
 
         case 'PEER_HELLO':
           addToast(
-            '👨‍👩‍👧 Family Phone Connected Live!',
-            `${payload.name} connected directly over WebRTC.`,
+            'Family Node Connected Live',
+            `${payload.name} connected directly over Quantum WebRTC Mesh.`,
             'success'
           );
           setFamilyGroup((prev) => {
             const exists = prev.members.some((m) => m.deviceId === payload.deviceId);
             if (exists) return prev;
+            const avatarImg = AVATAR_IMAGES[(prev.members.length) % AVATAR_IMAGES.length];
             return {
               ...prev,
               members: [
@@ -145,9 +146,9 @@ export const YatraProvider = ({ children }) => {
                   id: `usr-${payload.deviceId}`,
                   deviceId: payload.deviceId,
                   name: payload.name,
-                  role: payload.role || 'Member',
+                  role: payload.role || 'Node Member',
                   phone: '+91 Mobile Sync',
-                  avatar: '🧑',
+                  avatar: avatarImg,
                   battery: 92,
                   status: 'online',
                   coords: { lat: 25.3109, lng: 83.0107 },
@@ -185,7 +186,7 @@ export const YatraProvider = ({ children }) => {
           // Sound loud audio chime on this phone
           playSpiritualChimeBeacon();
           addToast(
-            '🔔 Spiritual Chime Beacon Alert!',
+            'Spiritual Chime Beacon Alert',
             `Loud chime beacon sounded by ${payload.senderName || 'Family Member'}.`,
             'warning'
           );
@@ -360,9 +361,11 @@ export const YatraProvider = ({ children }) => {
         updateGateCrowd,
         toggleGateStatus,
         familyGroup,
+        familyMembers: familyGroup?.members || [],
         createFamily,
         joinFamily,
         triggerBeacon,
+        triggerFamilyRing: triggerBeacon,
         passes,
         refreshPasses,
         lostReports,
