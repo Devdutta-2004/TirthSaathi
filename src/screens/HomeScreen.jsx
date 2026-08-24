@@ -72,13 +72,13 @@ export const HomeScreen = () => {
       stateName: 'Uttar Pradesh',
       tagline: 'Kashi Vishwanath, Ayodhya Ram Mandir & Mathura',
       badge: '3 Holy Dhams',
-      bgImage: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1200&q=80',
+      bgImage: '/images/uttar_pradesh_varanasi.jpg',
       shrines: [
         {
           id: 'kashi',
           name: 'Kashi Vishwanath Temple',
           city: 'Varanasi',
-          image: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=600&q=80',
+          image: '/images/uttar_pradesh_varanasi.jpg',
           tag: 'Jyotirlinga',
           liveWait: '18 mins',
           slotsLeft: 420,
