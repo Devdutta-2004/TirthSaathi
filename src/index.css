@@ -137,27 +137,28 @@
 
 /* App Sheet Shadow & Glass Utilities */
 .glass-gold-header {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(7, 20, 38, 0.96);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(245, 158, 11, 0.25);
-  box-shadow: 0 2px 12px -2px rgba(217, 119, 6, 0.08);
+  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.3);
 }
 
 .glass-gold-sidebar {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(7, 20, 38, 0.98);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-right: 1px solid rgba(245, 158, 11, 0.25);
-  box-shadow: 2px 0 16px -2px rgba(217, 119, 6, 0.08);
+  box-shadow: 2px 0 16px -2px rgba(0, 0, 0, 0.4);
 }
 
 .glass-gold-nav {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(7, 20, 38, 0.98);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid rgba(245, 158, 11, 0.25);
-  box-shadow: 0 -2px 12px -2px rgba(217, 119, 6, 0.08);
+  box-shadow: 0 -2px 16px -2px rgba(0, 0, 0, 0.4);
 }
+
 
 

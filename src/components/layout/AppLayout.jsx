@@ -295,9 +295,9 @@ export const AppLayout = ({ children }) => {
       </main>
 
       {/* ─────────────────────────────────────────────────────────────
-          4. MOBILE APP BOTTOM NAVIGATION BAR (Single-Color Clean Icons)
+          4. MOBILE APP BOTTOM NAVIGATION BAR (Deep Royal Navy & Gold)
       ───────────────────────────────────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg z-40 px-2 py-2 shadow-2xl border-t border-amber-200/90">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#071426]/95 backdrop-blur-lg z-40 px-2 py-2 shadow-2xl border-t border-amber-500/25 text-white">
         <div className="grid grid-cols-5 gap-1 items-center">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
@@ -308,14 +308,14 @@ export const AppLayout = ({ children }) => {
                 onClick={() => setCurrentScreen(item.id)}
                 className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all ${
                   isActive
-                    ? 'text-amber-700 font-black scale-105'
-                    : 'text-slate-400 hover:text-amber-800 font-medium'
+                    ? 'text-amber-300 font-extrabold scale-105'
+                    : 'text-slate-400 hover:text-white font-medium'
                 }`}
               >
-                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? 'bg-amber-500/15 text-amber-700 border border-amber-400/40 shadow-xs' : 'text-slate-400'}`}>
+                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-inner' : 'text-slate-400'}`}>
                   <Icon className="w-4 h-4" />
                 </div>
-                <span className="text-[10px] mt-0.5 leading-none font-bold">{item.label}</span>
+                <span className="text-[10px] mt-0.5 leading-none font-bold tracking-tight">{item.label}</span>
               </button>
             );
           })}
