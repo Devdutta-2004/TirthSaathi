@@ -28,47 +28,9 @@ TirthSaathi is a mobile-first Progressive Web App (PWA) built around two flagshi
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick App overview
 
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Run the Full Application (Frontend + WebSocket Server)
-```bash
-# Terminal 1: Start React Frontend (Vite)
-npm run dev
-
-# Terminal 2: Start Realtime WebSocket & Sync Backend
-npm run server
-```
-
-- **Frontend App**: [http://localhost:3000/](http://localhost:3000/) *(or `http://192.168.x.x:3000/` on mobile)*
-- **WebSocket Backend**: `ws://localhost:3001` *(Health check: `http://localhost:3001/health`)*
-
----
-
-## 📱 Testing with 2 Physical Smartphones
-
-1. Connect both smartphones to the same Wi-Fi network.
-2. Open `http://<YOUR_COMPUTER_IP>:3000/` on **Phone 1** (e.g. `http://192.168.1.100:3000/`).
-3. Open `http://<YOUR_COMPUTER_IP>:3000/` on **Phone 2**.
-4. On Phone 1 $\rightarrow$ Go to **Finder** $\rightarrow$ note Circle Code (e.g. `TS-FAM-7X29A`).
-5. On Phone 2 $\rightarrow$ Go to **Finder** $\rightarrow$ Tap **Join on Phone 2** $\rightarrow$ enter `TS-FAM-7X29A`.
-6. Watch both devices track each other live on OpenStreetMap with real-time distance in meters!
-
----
-
-## ☁️ Deployment on Vercel
-
-```bash
-npx vercel
-```
-Or import this GitHub repository directly into [Vercel Dashboard](https://vercel.com/new).
-
----
-
+App vercel_link : https://tirth-saathi-ruddy.vercel.app/
 ## 📁 Project Structure
 
 ```
